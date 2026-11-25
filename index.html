@@ -1,0 +1,949 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Kynova en 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Josefin+Sans:wght@400;600;700&display=swap">
+<style>
+/* Concepto: sala de máquinas de Rapture. Fondo marino, latón para lo que se nombra, color por tipo de dato. */
+:root {
+  --abyss: #06141b;
+  --deep: #0b222c;
+  --panel: #0e2a35;
+  --line: #1f4552;
+  --brass: #e2a93b;
+  --foam: #d8ecee;
+  --mute: #86a9b1;
+  --adam: #5ab4e6;
+  --eve: #f08a5d;
+  --plasmid: #7bd88f;
+  --err: #ef6b7f;
+  --f-display: "Josefin Sans", "Avenir Next", "Trebuchet MS", sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--abyss);
+  color: var(--foam);
+  font: 400 15px/1.55 var(--f-body);
+  overflow: hidden;
+}
+button { font: inherit; color: inherit; }
+#app {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr) 372px;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: "head head head" "steps stage panel";
+  padding-left: max(0px, env(safe-area-inset-left, 0px));
+  padding-right: max(0px, env(safe-area-inset-right, 0px));
+}
+header {
+  grid-area: head;
+  display: flex; align-items: center; gap: 28px; flex-wrap: wrap;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--deep);
+}
+.brand { display: flex; flex-direction: column; line-height: 1.1; }
+.brand b { font: 700 22px/1 var(--f-display); letter-spacing: .32em; color: var(--brass); }
+.brand span { font-size: 12px; color: var(--mute); margin-top: 5px; letter-spacing: .04em; }
+.counters { display: flex; gap: 10px; margin-left: auto; flex-wrap: wrap; }
+header .gbtn { margin-left: 4px; }
+.ctr { min-width: 112px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--abyss); }
+.ctr small { display: block; font: 600 10px/1.2 var(--f-display); letter-spacing: .16em; text-transform: uppercase; color: var(--mute); }
+.ctr strong { font: 500 22px/1.2 var(--f-mono); font-variant-numeric: tabular-nums; }
+.ctr strong.bad { color: var(--err); }
+.ctr em { font: 400 11px var(--f-body); font-style: normal; color: var(--err); margin-left: 6px; }
+
+#steps { grid-area: steps; overflow-y: auto; padding: 14px 10px; border-right: 1px solid var(--line); background: var(--deep); }
+#steps h2 { margin: 2px 8px 10px; font: 600 11px/1 var(--f-display); letter-spacing: .2em; text-transform: uppercase; color: var(--mute); }
+#steps ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.stp {
+  width: 100%; display: flex; gap: 10px; align-items: baseline; text-align: left;
+  padding: 7px 8px; border: 0; border-radius: 6px; background: none; cursor: pointer; color: var(--mute);
+}
+.stp i { font: 500 12px var(--f-mono); font-style: normal; width: 20px; flex: none; color: var(--line); }
+.stp:hover { background: var(--panel); color: var(--foam); }
+.stp[aria-current="step"] { background: var(--panel); color: var(--foam); box-shadow: inset 2px 0 0 var(--brass); }
+.stp[aria-current="step"] i { color: var(--brass); }
+.stp.done i { color: var(--mute); }
+.stp:focus-visible, .nav button:focus-visible, .tools button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+#stage { grid-area: stage; position: relative; min-width: 0; min-height: 0; background: radial-gradient(ellipse at 50% 40%, #0d2a36 0%, var(--abyss) 72%); }
+#gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.tools { position: absolute; left: 14px; bottom: 14px; display: flex; gap: 8px; }
+.tools button, .nav button {
+  padding: 7px 14px; border: 1px solid var(--line); border-radius: 6px; background: rgba(11, 34, 44, .88); cursor: pointer;
+}
+.tools button:hover, .nav button:hover:not(:disabled) { border-color: var(--brass); }
+.hint { position: absolute; right: 14px; bottom: 16px; font: 400 12px var(--f-mono); color: var(--mute); }
+.legend { position: absolute; left: 14px; top: 14px; display: none; gap: 14px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px; background: rgba(11, 34, 44, .88); font: 500 13px var(--f-mono); }
+.legend.on { display: flex; flex-wrap: wrap; }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 7px; background: var(--c); }
+#nogl { position: absolute; inset: 0; display: none; place-items: center; padding: 24px; text-align: center; color: var(--mute); }
+
+#panel { grid-area: panel; overflow-y: auto; padding: 22px 24px 18px; border-left: 1px solid var(--line); background: var(--deep); display: flex; flex-direction: column; gap: 14px; }
+.meta { display: flex; justify-content: space-between; align-items: center; font: 600 11px var(--f-display); letter-spacing: .18em; text-transform: uppercase; color: var(--mute); }
+.tag { padding: 3px 9px; border-radius: 4px; border: 1px solid currentColor; }
+.tag.PROBLEMA, .tag.CASO { color: var(--err); }
+.tag.IDEA { color: var(--adam); }
+.tag.SOLUCION { color: var(--plasmid); }
+.tag.RESUMEN { color: var(--brass); }
+#panel h1 { margin: 0; font: 700 26px/1.15 var(--f-display); letter-spacing: .01em; text-wrap: balance; }
+#panel p { margin: 0; max-width: 62ch; }
+#panel code { font: 500 .88em var(--f-mono); padding: 1px 5px; border-radius: 4px; background: var(--abyss); color: var(--brass); }
+.call { padding: 11px 14px; border-radius: 6px; background: var(--abyss); border: 1px solid var(--line); }
+.call b { display: block; margin-bottom: 3px; font: 600 11px var(--f-display); letter-spacing: .18em; text-transform: uppercase; color: var(--brass); }
+.call pre { margin: 6px 0 0; white-space: pre-wrap; font: 400 12.5px/1.5 var(--f-mono); color: var(--err); }
+.chg b.h { display: block; margin-bottom: 6px; font: 600 11px var(--f-display); letter-spacing: .18em; text-transform: uppercase; color: var(--mute); }
+.chg ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; font-size: 14px; }
+.chg li { display: flex; gap: 9px; }
+.chg li s { text-decoration: none; font: 600 14px var(--f-mono); width: 14px; flex: none; }
+.chg li s.p { color: var(--plasmid); } .chg li s.m { color: var(--err); } .chg li s.t { color: var(--brass); }
+table.map { border-collapse: collapse; width: 100%; font: 400 13px var(--f-mono); }
+table.map td { padding: 4px 6px; border-bottom: 1px solid var(--line); }
+table.map td:last-child { color: var(--brass); }
+.nav { margin-top: auto; display: flex; gap: 8px; padding-top: 8px; }
+.nav button { flex: 1; }
+.nav button:disabled { opacity: .35; cursor: default; }
+.kbd { font: 400 11px var(--f-mono); color: var(--mute); text-align: center; }
+
+.gbtn { padding: 8px 16px; border: 1px solid var(--brass); border-radius: 6px; background: none; color: var(--brass); cursor: pointer; font: 600 12px var(--f-display); letter-spacing: .18em; text-transform: uppercase; }
+.gbtn:hover { background: var(--brass); color: var(--abyss); }
+.gbtn:focus-visible, .gx:focus-visible, .gstep:focus-visible, .term:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.term { padding: 0; border: 0; border-bottom: 1px dotted var(--brass); background: none; color: inherit; font: inherit; cursor: help; }
+.term:hover { color: var(--brass); }
+#gloss { position: fixed; inset: 0; z-index: 50; display: none; place-items: center; padding: 24px; background: rgba(6, 20, 27, .82); }
+#gloss.on { display: grid; }
+.gbox { width: min(800px, 100%); max-height: min(88vh, 900px); display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; background: var(--deep); box-shadow: 0 24px 80px rgba(0, 0, 0, .55); }
+.ghead { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 16px 22px; border-bottom: 1px solid var(--line); }
+.ghead h2 { margin: 0; font: 700 22px var(--f-display); letter-spacing: .14em; color: var(--brass); text-transform: uppercase; }
+.ghead input[hidden] { display: none; }
+.ghead input { flex: 1 1 200px; min-width: 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--abyss); color: var(--foam); font: 400 14px var(--f-body); }
+.ghead input:focus-visible { outline: 2px solid var(--brass); outline-offset: 1px; }
+.gtabs { display: flex; gap: 4px; }
+.gtabs button { padding: 8px 16px; border: 1px solid var(--line); border-radius: 6px; background: none; cursor: pointer; font: 600 12px var(--f-display); letter-spacing: .18em; text-transform: uppercase; color: var(--mute); }
+.gtabs button[aria-selected="true"] { color: var(--brass); border-color: var(--brass); background: rgba(226, 169, 59, .08); }
+.gtabs button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+#gguide code { font: 500 .88em var(--f-mono); padding: 1px 5px; border-radius: 4px; background: var(--abyss); color: var(--brass); }
+#gguide p { max-width: 66ch; margin: 8px 0; }
+#gguide h3.grp { margin-top: 26px; }
+.gcode { margin: 8px 0; padding: 12px 14px; overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--abyss); font: 400 13px/1.65 var(--f-mono); color: var(--foam); }
+.gtab { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 14px; }
+.gtab th { text-align: left; padding: 6px 8px; font: 600 11px var(--f-display); letter-spacing: .16em; text-transform: uppercase; color: var(--mute); border-bottom: 1px solid var(--line); }
+.gtab td { padding: 7px 8px; vertical-align: top; border-bottom: 1px solid var(--line); }
+.gtab td:first-child { white-space: nowrap; }
+.gtab td:first-child code { white-space: nowrap; }
+.gfaq { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.gfaq p { margin: 4px 0 0; }
+.gx { padding: 7px 14px; border: 1px solid var(--line); border-radius: 6px; background: none; cursor: pointer; }
+.gx:hover { border-color: var(--brass); }
+.glist { overflow-y: auto; padding: 6px 22px 22px; }
+.gintro { margin: 14px 0 4px; color: var(--mute); max-width: 64ch; }
+.glist h3.grp { margin: 24px 0 6px; font: 600 11px var(--f-display); letter-spacing: .22em; text-transform: uppercase; color: var(--mute); }
+.gent { padding: 12px 0; border-bottom: 1px solid var(--line); scroll-margin-top: 8px; }
+.gent.hit { animation: hit 1.6s ease-out; }
+@keyframes hit { 0%, 60% { background: rgba(226, 169, 59, .16); } 100% { background: transparent; } }
+.gent h4 { margin: 0 0 4px; font: 600 17px var(--f-display); letter-spacing: .02em; }
+.gent h4 small { font: 400 12px var(--f-mono); color: var(--mute); margin-left: 8px; }
+.gent p { margin: 0 0 6px; max-width: 66ch; }
+.gent .ex { color: var(--mute); font-size: 14px; }
+.gent .ex b { color: var(--brass); font-weight: 600; }
+.gstep { padding: 3px 10px; border: 1px solid var(--line); border-radius: 4px; background: none; font: 500 12px var(--f-mono); color: var(--mute); cursor: pointer; }
+.gstep:hover { border-color: var(--brass); color: var(--brass); }
+.gnone { display: none; margin: 24px 0; color: var(--mute); }
+@media (max-width: 960px) { .gtab td:first-child { white-space: normal; } #gloss { padding: 0; } .gbox { max-height: 100%; height: 100%; border-radius: 0; } .ghead, .glist { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); } }
+@media (max-width: 1320px) and (min-width: 961px) {
+  #app { grid-template-columns: 64px minmax(0, 1fr) 360px; }
+  #steps h2, .stp span { display: none; }
+  .stp { justify-content: center; padding: 9px 4px; } .stp i { width: auto; font-size: 13px; }
+}
+@media (max-width: 960px) {
+  body { overflow: auto; }
+  #app { height: auto; min-height: 100%; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto 58vh auto;
+    grid-template-areas: "head" "steps" "stage" "panel"; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  header { padding-left: 0; padding-right: 0; gap: 12px; }
+  .counters { margin-left: 0; }
+  .ctr { min-width: 0; flex: 1 1 96px; }
+  #steps { padding: 8px 0; border-right: 0; overflow-x: auto; overflow-y: hidden; }
+  #steps h2 { display: none; }
+  #steps ol { flex-direction: row; gap: 4px; }
+  .stp { width: auto; white-space: nowrap; padding: 7px 10px; border: 1px solid var(--line); }
+  .stp span { display: none; }
+  .stp i { width: auto; color: inherit; }
+  #panel { border-left: 0; padding: 18px 0 20px; }
+  .hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+</head><body>
+<div id="app">
+  <header>
+    <div class="brand"><b>KYNOVA</b><span>del archivo .kyn al Chapín, paso a paso</span></div>
+    <button class="gbtn" id="b-gloss" type="button" aria-haspopup="dialog">Guía y glosario</button>
+    <div class="counters" aria-live="polite">
+      <div class="ctr"><small>Tokens</small><strong id="c-tok">—</strong></div>
+      <div class="ctr"><small>Nodos del árbol</small><strong id="c-nod">—</strong></div>
+      <div class="ctr"><small>Símbolos</small><strong id="c-sim">—</strong></div>
+      <div class="ctr"><small>Errores</small><strong id="c-err">—</strong></div>
+    </div>
+  </header>
+  <nav id="steps" aria-label="Pasos"><h2>Recorrido</h2><ol id="steplist"></ol></nav>
+  <main id="stage">
+    <canvas id="gl" aria-label="Escena 3D del compilador. Arrastra para girar, rueda para acercar."></canvas>
+    <div class="legend" id="legend">
+      <span style="--c:var(--adam)">adam · entero</span>
+      <span style="--c:var(--eve)">eve · decimal</span>
+      <span style="--c:var(--plasmid)">plasmid · texto</span>
+      <span style="--c:var(--foam)">comparación</span>
+    </div>
+    <div class="tools">
+      <button id="b-replay" type="button">Repetir</button>
+      <button id="b-pause" type="button">Pausa</button>
+    </div>
+    <div class="hint">arrastra para girar · rueda para acercar</div>
+    <div id="nogl">Este navegador no pudo abrir WebGL. El texto de cada paso sigue disponible a la derecha.</div>
+  </main>
+  <aside id="panel" aria-live="polite"></aside>
+</div>
+
+<div id="gloss" role="dialog" aria-modal="true" aria-label="Guía y glosario">
+  <div class="gbox">
+    <div class="ghead">
+      <div class="gtabs" role="tablist"><button role="tab" id="t-guide" type="button" aria-selected="true">Guía</button><button role="tab" id="t-gloss" type="button" aria-selected="false">Glosario</button></div>
+      <input id="gq" type="search" placeholder="Buscar: flex, token, árbol…" aria-label="Buscar en el glosario" autocomplete="off" hidden>
+      <button class="gx" id="gclose" type="button">Cerrar</button>
+    </div>
+    <div class="glist" id="gguide">
+      <p class="gintro">Todo lo necesario para correr el proyecto y entender cada archivo.</p>
+      <h3 class="grp">Qué hace</h3>
+      <p>Kynova es un compilador. Lee un archivo <code>.kyn</code>, comprueba que esté bien escrito y que los tipos tengan sentido, y escribe su traducción a Chapín en un archivo <code>.gt</code>. No ejecuta el programa.</p>
+      <h3 class="grp">Qué hay que tener instalado</h3>
+      <p>Un compilador de C (<code>gcc</code> o <code>clang</code>), <b>Flex</b> 2.6 o más nuevo, <b>Bison</b> 3.6 o más nuevo y <code>make</code>.</p>
+      <pre class="gcode"># macOS (el bison que trae el sistema es muy viejo)
+brew install bison flex
+
+# Ubuntu / Debian
+sudo apt install build-essential flex bison
+
+# Windows: usar WSL (Ubuntu) y seguir los pasos de Linux</pre>
+      <h3 class="grp">Cómo se corre</h3>
+      <p>Desde la carpeta del proyecto:</p>
+      <pre class="gcode">make                                # compila y crea el programa ./kynova
+./kynova salida.kyn                 # revisa el archivo: muestra árbol y símbolos
+./kynova -q salida.kyn              # solo el veredicto (VÁLIDO o INVÁLIDO)
+./kynova -t salida.kyn              # además muestra los tokens
+./kynova -c Chapin.gt salida.kyn    # además escribe la traducción en Chapin.gt
+make test                           # corre los 23 casos de prueba</pre>
+      <table class="gtab"><thead><tr><th>Opción</th><th>Qué hace</th></tr></thead><tbody>
+        <tr><td><code>-t</code></td><td>muestra los tokens que reconoce Flex</td></tr>
+        <tr><td><code>-a</code></td><td>muestra el árbol que arma Bison, con tipos</td></tr>
+        <tr><td><code>-s</code></td><td>muestra la tabla de símbolos (Gene Bank)</td></tr>
+        <tr><td><code>-d ARCH</code></td><td>guarda el árbol en formato Graphviz (para hacer una imagen con <code>dot</code>)</td></tr>
+        <tr><td><code>-q</code></td><td>solo errores y el resultado final</td></tr>
+        <tr><td><code>-c ARCH</code></td><td>genera la traducción a Chapín en ese archivo</td></tr>
+        <tr><td><code>-h</code></td><td>ayuda</td></tr>
+      </tbody></table>
+      <p>El programa termina con <b>0</b> si el archivo es válido, <b>1</b> si tiene errores y <b>2</b> si se usó mal (archivo que no existe u opción desconocida). El Chapín solo se genera cuando el archivo es válido.</p>
+      <h3 class="grp">Qué es cada archivo</h3>
+      <table class="gtab"><thead><tr><th>Archivo</th><th>Para qué sirve</th></tr></thead><tbody>
+        <tr><td><code>salida.kyn</code></td><td>El programa de ejemplo que mandó el grupo 6 (Andante → Kynova). Es lo que se compila.</td></tr>
+        <tr><td><code>Chapin.gt</code></td><td>La traducción a Chapín de <code>salida.kyn</code>. Es lo que se le entrega al grupo de Chapín. Se regenera con <code>-c</code>.</td></tr>
+        <tr><td><code>kynova</code></td><td>El compilador ya armado. Aparece al correr <code>make</code>.</td></tr>
+        <tr><td><code>Makefile</code></td><td>Las recetas: <code>make</code>, <code>make test</code>, <code>make demo</code>, <code>make ast-png</code> y <code>make clean</code>.</td></tr>
+        <tr><td><code>src/kynova.l</code></td><td>Las reglas de Flex: qué es una palabra reservada, un número, un comentario. Aquí se cambia el vocabulario de Kynova.</td></tr>
+        <tr><td><code>src/kynova.y</code></td><td>La gramática de Bison: en qué orden pueden venir las piezas. Construye el árbol.</td></tr>
+        <tr><td><code>src/lexer.h</code></td><td>Lo que comparten el léxico, el parser y <code>main.c</code>.</td></tr>
+        <tr><td><code>src/ast.h</code>, <code>ast.c</code></td><td>Los nodos del árbol, cómo se crean y cómo se imprimen.</td></tr>
+        <tr><td><code>src/symtab.h</code>, <code>symtab.c</code></td><td>La tabla de símbolos (Gene Bank): variables, tipos, alcance y usos.</td></tr>
+        <tr><td><code>src/semantic.h</code>, <code>semantic.c</code></td><td>El análisis semántico: declaraciones y compatibilidad de tipos.</td></tr>
+        <tr><td><code>src/chapin.h</code>, <code>chapin.c</code></td><td>El traductor a Chapín. Aquí se cambia cómo sale cada palabra en Chapín.</td></tr>
+        <tr><td><code>src/main.c</code></td><td>El programa principal: lee las opciones y llama a cada fase en orden.</td></tr>
+        <tr><td><code>tests/valid/</code></td><td>5 programas que deben aceptarse.</td></tr>
+        <tr><td><code>tests/invalid/</code></td><td>18 programas que deben rechazarse, uno por cada tipo de error.</td></tr>
+        <tr><td><code>tests/run_tests.sh</code></td><td>El script que usa <code>make test</code>.</td></tr>
+        <tr><td><code>build/</code></td><td>Archivos que genera la compilación. No se editan.</td></tr>
+        <tr><td><code>ast.png</code></td><td>Imagen del árbol (se hace con <code>make ast-png</code>, requiere Graphviz).</td></tr>
+        <tr><td><code>Lenguajes Compiladores.xlsx</code></td><td>La tabla que compara el vocabulario de todos los grupos.</td></tr>
+        <tr><td><code>README.md</code></td><td>La documentación completa del proyecto.</td></tr>
+        <tr><td><code>PROMPT_PRESENTACION.md</code></td><td>El texto para generar el PowerPoint de la entrega.</td></tr>
+        <tr><td><code>presentacion/index.html</code></td><td>Esta página. Se abre con doble clic en el navegador y necesita internet.</td></tr>
+        <tr><td><code>presentacion/Dockerfile</code>, <code>nginx.conf</code></td><td>Lo que usa Coolify para publicar la página en un servidor. Los pasos están en <code>DEPLOY.md</code>.</td></tr>
+      </tbody></table>
+      <h3 class="grp">Preguntas frecuentes</h3>
+      <div class="gfaq"><b>¿Qué significa «error léxico», «sintáctico» o «semántico»?</b><p>Dice qué fase lo atrapó: una pieza que no existe, piezas en mal orden, o algo bien escrito pero sin sentido, como mezclar tipos. Mira el Glosario.</p></div>
+      <div class="gfaq"><b>¿Dónde cambio una palabra de Kynova?</b><p>En <code>src/kynova.l</code> (la palabra) y <code>src/kynova.y</code> (si cambia la gramática).</p></div>
+      <div class="gfaq"><b>¿Dónde cambio cómo sale algo en Chapín?</b><p>En <code>src/chapin.c</code>. Después corre <code>make</code> y <code>./kynova -c Chapin.gt salida.kyn</code>.</p></div>
+      <div class="gfaq"><b>¿Por qué no se genera el Chapín?</b><p>Solo se genera si el archivo es válido. Corre sin <code>-q</code> para ver el error y su línea.</p></div>
+    </div>
+    <div class="glist" id="glist" hidden></div>
+  </div>
+</div>
+<script>window.KYN = {"tokens": [[4, 1, "SPLICE", "splice"], [4, 8, "PLASMID", "plasmid"], [4, 16, "ID", "Personaje"], [4, 26, "ASIGNACION", "="], [4, 28, "CADENA", "\"\""], [4, 30, "PUNTO_COMA", ";"], [5, 1, "SPLICE", "splice"], [5, 8, "ADAM", "adam"], [5, 13, "ID", "estrellas"], [5, 23, "ASIGNACION", "="], [5, 25, "ENTERO", "0"], [5, 26, "PUNTO_COMA", ";"], [6, 1, "SPLICE", "splice"], [6, 8, "EVE", "eve"], [6, 12, "ID", "tiempo"], [6, 19, "ASIGNACION", "="], [6, 21, "REAL", "0.00"], [6, 25, "PUNTO_COMA", ";"], [8, 1, "ID", "Personaje"], [8, 11, "ASIGNACION", "="], [8, 13, "CADENA", "\"Peach\""], [8, 20, "PUNTO_COMA", ";"], [9, 1, "ID", "estrellas"], [9, 11, "ASIGNACION", "="], [9, 13, "ENTERO", "20"], [9, 15, "PUNTO_COMA", ";"], [10, 1, "ID", "tiempo"], [10, 8, "ASIGNACION", "="], [10, 10, "REAL", "45.50"], [10, 15, "PUNTO_COMA", ";"], [11, 1, "RADIO", "radio"], [11, 6, "PAR_IZQ", "("], [11, 7, "ID", "estrellas"], [11, 16, "PAR_DER", ")"], [11, 17, "PUNTO_COMA", ";"], [12, 1, "ATLAS", "atlas"], [12, 7, "PAR_IZQ", "("], [12, 8, "ID", "estrellas"], [12, 18, "MAYOR_IGUAL", ">="], [12, 21, "ENTERO", "20"], [12, 23, "PAR_DER", ")"], [12, 25, "LLAVE_IZQ", "{"], [13, 5, "ID", "tiempo"], [13, 12, "ASIGNACION", "="], [13, 14, "PAR_IZQ", "("], [13, 15, "ID", "tiempo"], [13, 22, "MENOS", "-"], [13, 24, "REAL", "5.50"], [13, 28, "PAR_DER", ")"], [13, 30, "POR", "*"], [13, 32, "ENTERO", "2"], [13, 33, "PUNTO_COMA", ";"], [14, 1, "LLAVE_DER", "}"], [14, 3, "RYAN", "ryan"], [14, 8, "ATLAS", "atlas"], [14, 14, "PAR_IZQ", "("], [14, 15, "ID", "estrellas"], [14, 25, "MAYOR", ">"], [14, 27, "ENTERO", "10"], [14, 29, "PAR_DER", ")"], [14, 31, "LLAVE_IZQ", "{"], [15, 5, "ID", "estrellas"], [15, 15, "ASIGNACION", "="], [15, 17, "PAR_IZQ", "("], [15, 18, "ID", "estrellas"], [15, 28, "MAS", "+"], [15, 30, "ENTERO", "10"], [15, 32, "PAR_DER", ")"], [15, 34, "ENTRE", "/"], [15, 36, "ENTERO", "2"], [15, 37, "PUNTO_COMA", ";"], [16, 1, "LLAVE_DER", "}"], [16, 3, "RYAN", "ryan"], [16, 8, "LLAVE_IZQ", "{"], [17, 5, "ID", "estrellas"], [17, 15, "ASIGNACION", "="], [17, 17, "ENTERO", "100"], [17, 21, "MENOS", "-"], [17, 23, "PAR_IZQ", "("], [17, 24, "ENTERO", "25"], [17, 27, "POR", "*"], [17, 29, "ENTERO", "2"], [17, 30, "PAR_DER", ")"], [17, 31, "PUNTO_COMA", ";"], [18, 1, "LLAVE_DER", "}"], [19, 1, "DIARY", "diary"], [19, 6, "PAR_IZQ", "("], [19, 7, "ID", "Personaje"], [19, 16, "PAR_DER", ")"], [19, 17, "PUNTO_COMA", ";"], [20, 1, "DIARY", "diary"], [20, 6, "PAR_IZQ", "("], [20, 7, "ID", "tiempo"], [20, 13, "PAR_DER", ")"], [20, 14, "PUNTO_COMA", ";"], [21, 1, "VITA", "vita"], [21, 6, "PAR_IZQ", "("], [21, 7, "ID", "estrellas"], [21, 17, "MENOR", "<"], [21, 19, "ENTERO", "25"], [21, 21, "PAR_DER", ")"], [21, 23, "LLAVE_IZQ", "{"], [22, 5, "ID", "estrellas"], [22, 15, "ASIGNACION", "="], [22, 17, "ID", "estrellas"], [22, 27, "MAS", "+"], [22, 29, "PAR_IZQ", "("], [22, 30, "ENTERO", "1"], [22, 32, "MAS", "+"], [22, 34, "ENTERO", "2"], [22, 35, "PAR_DER", ")"], [22, 36, "PUNTO_COMA", ";"], [23, 1, "LLAVE_DER", "}"]], "source": "// Codigo Andante generado por andante (Grupo 6) desde andante.and\n\n// Traduccion automatica de Andante a Kynova (.kyn)\nsplice plasmid Personaje = \"\";\nsplice adam estrellas = 0;\nsplice eve tiempo = 0.00;\n// Archivo de prueba completo con operadores binarios y paréntesis (valido3.sa)\nPersonaje = \"Peach\";\nestrellas = 20;\ntiempo = 45.50;\nradio(estrellas);\natlas (estrellas >= 20) {\n    tiempo = (tiempo - 5.50) * 2;\n} ryan atlas (estrellas > 10) {\n    estrellas = (estrellas + 10) / 2;\n} ryan {\n    estrellas = 100 - (25 * 2);\n}\ndiary(Personaje);\ndiary(tiempo);\nvita (estrellas < 25) {\n    estrellas = estrellas + (1 + 2);\n}\n/*\n    Cubre declaraciones, lectura, condicionales, ciclo mientras,\n    salida y operaciones aritméticas (+, -, *, /) con paréntesis.\n*/\n\n", "chapin": "// Codigo Andante generado por andante (Grupo 6) desde andante.and\n// Traduccion automatica de Andante a Kynova (.kyn)\nva cuento Personaje = \"\";\nva pisto estrellas = 0;\nva quetzal tiempo = 0.00;\n// Archivo de prueba completo con operadores binarios y paréntesis (valido3.sa)\nPersonaje = \"Peach\";\nestrellas = 20;\ntiempo = 45.50;\nclavar(estrellas);\ncabal (estrellas >= 20) {\n    tiempo = (tiempo - 5.50) * 2;\n} sino {\n    cabal (estrellas > 10) {\n        estrellas = (estrellas + 10) / 2;\n    } sino {\n        estrellas = 100 - (25 * 2);\n    }\n}\nshute(Personaje);\nshute(tiempo);\nbrega (estrellas < 25) {\n    estrellas = estrellas + (1 + 2);\n}\n/*\n    Cubre declaraciones, lectura, condicionales, ciclo mientras,\n    salida y operaciones aritméticas (+, -, *, /) con paréntesis.\n*/\n", "symbols": [{"name": "Personaje", "type": "plasmid", "c11": "const char *", "scope": "global", "line": 4, "uses": 1}, {"name": "estrellas", "type": "adam", "c11": "int", "scope": "global", "line": 5, "uses": 6}, {"name": "tiempo", "type": "eve", "c11": "double", "scope": "global", "line": 6, "uses": 2}]};</script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+await Promise.race([
+  Promise.all([document.fonts.load('500 40px "IBM Plex Mono"'), document.fonts.load('600 40px "IBM Plex Mono"')]).catch(() => {}),
+  new Promise((r) => setTimeout(r, 2500)),
+]);
+const D = window.KYN;
+const MONO = '"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace';
+const COL = { brass: "#e2a93b", brassHi: "#f3d38a", foam: "#d8ecee", mute: "#86a9b1", dim: "#3f6670", num: "#f08a5d", op: "#c9d8dc",
+  delim: "#5f8c97", adam: "#5ab4e6", eve: "#f08a5d", plasmid: "#7bd88f", cmp: "#d8ecee", neutral: "#6f9aa4", err: "#ef6b7f", ok: "#7bd88f", bg: "#0b222c", line: "#1f4552" };
+const KW_SRC = new Set(["splice", "adam", "eve", "plasmid", "radio", "diary", "atlas", "ryan", "vita"]);
+const KW_GT = new Set(["va", "pisto", "quetzal", "cuento", "aguas", "shute", "cabal", "sino", "brega"]);
+const $ = (id) => document.getElementById(id);
+const clamp01 = (x) => Math.min(1, Math.max(0, x));
+const ease = (x) => { x = clamp01(x); return x * x * (3 - 2 * x); };
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- Datos reales de salida.kyn ---------- */
+const SRC_LINES = D.source.replace(/\n$/, "").split("\n");
+const GT_LINES = D.chapin.replace(/\n$/, "").split("\n");
+const TOKENS = D.tokens.map(([line, col, kind, lex]) => ({ line, col, kind, lex }));
+const SYMBOLS = D.symbols;
+
+/* ---------- Arbol (el mismo que imprime kynova -a para salida.kyn) ---------- */
+const N = (label, kind, children = [], o = {}) => ({ label, kind, children, ...o });
+const leaf = (label, type, sym) => N(label, "expr", [], { type, sym });
+const bin = (op, a, b, type) => N(op, "expr", [a, b], { type });
+const cmp = (op, a, b) => N(op, "expr", [a, b], { type: "cmp" });
+const est = () => leaf("estrellas", "adam", "estrellas");
+const tmp = () => leaf("tiempo", "eve", "tiempo");
+const blk = (...c) => N("Bloque", "ctrl", c);
+const tagAll = (n, key) => { n[key] = true; n.children.forEach((c) => tagAll(c, key)); return n; };
+
+const assignTiempo = tagAll(N("tiempo =", "stmt", [bin("*", bin("-", tmp(), leaf("5.50", "eve"), "eve"), leaf("2", "adam"), "eve")], { sym: "tiempo" }), "paren");
+const ifInner = N("atlas / ryan", "ctrl", [
+  cmp(">", est(), leaf("10", "adam")),
+  blk(N("estrellas =", "stmt", [bin("/", bin("+", est(), leaf("10", "adam"), "adam"), leaf("2", "adam"), "adam")], { sym: "estrellas" })),
+  blk(N("estrellas =", "stmt", [bin("-", leaf("100", "adam"), bin("*", leaf("25", "adam"), leaf("2", "adam"), "adam"), "adam")], { sym: "estrellas" })),
+]);
+const ifOuter = tagAll(N("atlas / ryan", "ctrl", [cmp(">=", est(), leaf("20", "adam")), blk(assignTiempo), blk(ifInner)]), "chain");
+const ROOT = N("Programa", "prog", [
+  N("splice plasmid\nPersonaje", "stmt", [leaf('""', "plasmid")], { sym: "Personaje" }),
+  N("splice adam\nestrellas", "stmt", [leaf("0", "adam")], { sym: "estrellas" }),
+  N("splice eve\ntiempo", "stmt", [leaf("0.00", "eve")], { sym: "tiempo" }),
+  N("Personaje =", "stmt", [leaf('"Peach"', "plasmid")], { sym: "Personaje" }),
+  N("estrellas =", "stmt", [leaf("20", "adam")], { sym: "estrellas" }),
+  N("tiempo =", "stmt", [leaf("45.50", "eve")], { sym: "tiempo" }),
+  N("radio\n(estrellas)", "stmt", [], { sym: "estrellas" }),
+  ifOuter,
+  N("diary", "stmt", [leaf("Personaje", "plasmid", "Personaje")]),
+  N("diary", "stmt", [tmp()]),
+  N("vita", "ctrl", [cmp("<", est(), leaf("25", "adam")), blk(N("estrellas =", "stmt", [bin("+", est(), bin("+", leaf("1", "adam"), leaf("2", "adam"), "adam"), "adam")], { sym: "estrellas" }))]),
+]);
+
+/* ---------- Renderer ---------- */
+const stage = $("stage"), canvas = $("gl");
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); } catch (e) { renderer = null; }
+if (!renderer) { $("nogl").style.display = "grid"; canvas.style.display = "none"; }
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x06141b, 60, 170);
+const camera = new THREE.PerspectiveCamera(42, 1.6, 0.1, 400);
+camera.position.set(0, 0, 40);
+scene.add(new THREE.AmbientLight(0xffffff, 1.1));
+const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(8, 14, 20); scene.add(key);
+let controls = null;
+if (renderer) {
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  controls = new OrbitControls(camera, canvas);
+  controls.enableDamping = true; controls.dampingFactor = 0.08; controls.maxDistance = 140; controls.minDistance = 4;
+}
+const ANISO = renderer ? renderer.capabilities.getMaxAnisotropy() : 1;
+
+/* ---------- Capas con desvanecido ---------- */
+class Layer {
+  constructor() { this.group = new THREE.Group(); this.items = []; this.alpha = 0; this.target = 0; this.group.visible = false; scene.add(this.group); }
+  reg(obj, mat, base = 1, parent = this.group) {
+    mat.transparent = true;
+    const it = { obj, mat, base, dim: 1, dimT: 1, rev: 1, s0: obj.scale.clone() };
+    this.items.push(it); parent.add(obj); return it;
+  }
+  update(k) {
+    this.alpha += (this.target - this.alpha) * k;
+    if (Math.abs(this.target - this.alpha) < 0.003) this.alpha = this.target;
+    this.group.visible = this.alpha > 0.01;
+    if (!this.group.visible) return;
+    for (const it of this.items) {
+      it.dim += (it.dimT - it.dim) * k;
+      it.mat.opacity = it.base * this.alpha * it.dim * clamp01(it.rev);
+      if (it.obj.isSprite || it.obj.isMesh) it.obj.scale.copy(it.s0).multiplyScalar(0.25 + 0.75 * ease(it.rev));
+      it.obj.visible = it.rev > 0.002 && it.mat.opacity > 0.004;
+    }
+  }
+}
+
+/* ---------- Etiquetas (sprites) ---------- */
+function label(text, { color = COL.foam, bg = "rgba(11,34,44,.92)", border = null, h = 0.34, weight = 500, padX = 14, front = true } = {}) {
+  const lines = text.split("\n"), FS = 40, LH = 52, PX = 128 / 128;
+  const m = document.createElement("canvas").getContext("2d");
+  m.font = `${weight} ${FS}px ${MONO}`;
+  const tw = Math.max(...lines.map((l) => m.measureText(l).width));
+  const cw = Math.ceil(tw + padX * 2), ch = LH * lines.length + 22;
+  const c = document.createElement("canvas"); c.width = cw; c.height = ch;
+  const g = c.getContext("2d");
+  if (bg) { g.fillStyle = bg; g.beginPath(); g.roundRect(1, 1, cw - 2, ch - 2, 14); g.fill(); }
+  if (border) { g.strokeStyle = border; g.lineWidth = 3; g.beginPath(); g.roundRect(2, 2, cw - 4, ch - 4, 14); g.stroke(); }
+  g.font = `${weight} ${FS}px ${MONO}`; g.fillStyle = color; g.textAlign = "center"; g.textBaseline = "middle";
+  lines.forEach((l, i) => g.fillText(l, cw / 2, 11 + LH * (i + 0.5)));
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = ANISO;
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: !front });
+  const sp = new THREE.Sprite(mat);
+  const unit = h / (LH * 0.9); // altura de una línea = h
+  sp.scale.set(cw * unit, ch * unit, 1);
+  if (front) sp.renderOrder = 10;
+  return { sprite: sp, mat, w: cw * unit, h: ch * unit };
+}
+
+/* ---------- Panel de código (textura de canvas) ---------- */
+const CW = 0.2, LHT = 0.46, PXU = 110, PADX = 0.62, PADY = 0.34;
+function colorize(line, kw, st) {
+  const cols = new Array(line.length).fill(COL.foam);
+  let i = 0;
+  const paint = (a, b, c) => { for (let k = a; k < b; k++) cols[k] = c; };
+  while (i < line.length) {
+    if (st.block) { const e = line.indexOf("*/", i); const end = e < 0 ? line.length : e + 2; paint(i, end, COL.mute); i = end; if (e >= 0) st.block = false; continue; }
+    const two = line.substr(i, 2);
+    if (two === "//") { paint(i, line.length, COL.mute); break; }
+    if (two === "/*") { st.block = true; paint(i, i + 2, COL.mute); i += 2; continue; }
+    const ch = line[i];
+    if (ch === '"') { const e = line.indexOf('"', i + 1); const end = e < 0 ? line.length : e + 1; paint(i, end, COL.num); i = end; continue; }
+    if (/[A-Za-z_]/.test(ch)) { let j = i; while (j < line.length && /\w/.test(line[j])) j++; paint(i, j, kw.has(line.slice(i, j)) ? COL.brass : COL.foam); i = j; continue; }
+    if (/\d/.test(ch)) { let j = i; while (j < line.length && /[\d.]/.test(line[j])) j++; paint(i, j, COL.num); i = j; continue; }
+    if ("+-*/<>=!".includes(ch)) cols[i] = COL.op; else if ("(){};,".includes(ch)) cols[i] = COL.delim;
+    i++;
+  }
+  return cols;
+}
+class CodePanel {
+  constructor(lines, kw) {
+    this.lines = lines; this.kw = kw;
+    const maxCols = Math.max(...lines.map((l) => l.length));
+    this.w = maxCols * CW + PADX + 0.5; this.h = lines.length * LHT + PADY * 2;
+    this.canvas = document.createElement("canvas");
+    this.canvas.width = Math.ceil(this.w * PXU); this.canvas.height = Math.ceil(this.h * PXU);
+    this.tex = new THREE.CanvasTexture(this.canvas); this.tex.colorSpace = THREE.SRGBColorSpace; this.tex.anisotropy = ANISO;
+    this.mat = new THREE.MeshBasicMaterial({ map: this.tex, transparent: true, depthWrite: false });
+    this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(this.w, this.h), this.mat);
+    this.mesh.position.set(this.w / 2, -this.h / 2, 0);
+    this.shown = -1; this.draw(lines.length);
+  }
+  draw(n) {
+    if (n === this.shown) return; this.shown = n;
+    const g = this.canvas.getContext("2d"), W = this.canvas.width, H = this.canvas.height;
+    g.clearRect(0, 0, W, H);
+    g.fillStyle = COL.bg; g.beginPath(); g.roundRect(0, 0, W, H, 16); g.fill();
+    g.strokeStyle = COL.line; g.lineWidth = 3; g.beginPath(); g.roundRect(1.5, 1.5, W - 3, H - 3, 16); g.stroke();
+    const fs = CW * PXU / 0.6;
+    g.font = `500 ${fs}px ${MONO}`; g.textBaseline = "middle";
+    const st = { block: false };
+    for (let li = 0; li < this.lines.length; li++) {
+      const line = this.lines[li], cols = colorize(line, this.kw, st);
+      if (li >= n) continue;
+      const y = (PADY + li * LHT + LHT / 2) * PXU;
+      g.fillStyle = COL.dim; g.textAlign = "right"; g.fillText(String(li + 1), (PADX - 0.16) * PXU, y);
+      g.textAlign = "left";
+      for (let ci = 0; ci < line.length; ci++) { if (line[ci] === " ") continue; g.fillStyle = cols[ci]; g.fillText(line[ci], (PADX + ci * CW) * PXU, y); }
+    }
+    this.tex.needsUpdate = true;
+  }
+}
+
+/* ============ CAPAS ============ */
+const L = {};
+for (const k of ["code", "ast", "sym", "gt", "err", "fix", "pipe"]) L[k] = new Layer();
+
+/* ---- Código + tokens ---- */
+const srcPanel = new CodePanel(SRC_LINES, KW_SRC);
+L.code.group.position.set(-srcPanel.w / 2, srcPanel.h / 2, 0);
+const srcItem = L.code.reg(srcPanel.mesh, srcPanel.mat);
+const XS = 1.42, YS = 1.55; // las fichas se separan para que no se pisen
+const tokCat = (k) => /^(SPLICE|ADAM|EVE|PLASMID|RADIO|DIARY|ATLAS|RYAN|VITA)$/.test(k) ? COL.brass : k === "ID" ? COL.foam : /^(ENTERO|REAL|CADENA)$/.test(k) ? COL.num : /^(PAR_|LLAVE_|PUNTO_COMA)/.test(k) ? COL.delim : COL.op;
+const tokItems = TOKENS.map((t) => {
+  const c = tokCat(t.kind);
+  const lb = label(t.lex, { color: c, bg: "rgba(6,20,27,.97)", border: c, h: 0.37, weight: 600, padX: 10, front: false });
+  const x = PADX + (t.col - 1) * CW * XS + (t.lex.length * CW * XS) / 2, y = -(PADY + (t.line - 1) * LHT * YS + (LHT * YS) / 2);
+  lb.sprite.position.set(x, y, 0.08);
+  const it = L.code.reg(lb.sprite, lb.mat); it.rev = 0; it.zBase = 0.08; it.x = x; it.y = y;
+  return it;
+});
+
+/* ---- Árbol ---- */
+const ND = [];
+(function layout() {
+  let leafI = 0; const SX = 1.4, SY = 1.6;
+  const walk = (n, d, parent, idx) => {
+    n.depth = d; n.parent = parent; n.idx = idx; n.top = d === 1 ? idx : parent ? parent.top : -1; ND.push(n);
+    if (!n.children.length) { n.li = leafI; n.x = leafI++ * SX; } else { n.children.forEach((c, i) => walk(c, d + 1, n, i)); n.x = (n.children[0].x + n.children[n.children.length - 1].x) / 2; }
+    n.y = -d * SY; n.z = Math.sin(d * 1.1) * 0.9;
+  };
+  walk(ROOT, 0, null, 0);
+  const minX = Math.min(...ND.map((n) => n.x)), maxX = Math.max(...ND.map((n) => n.x));
+  const minY = Math.min(...ND.map((n) => n.y));
+  const cx = (minX + maxX) / 2, cy = minY / 2;
+  ND.forEach((n) => { n.x -= cx; n.y -= cy; });
+})();
+const NODE_N = ND.length;
+const kindColor = (n) => n.kind === "prog" ? COL.brassHi : n.kind === "stmt" ? COL.brass : n.kind === "ctrl" ? COL.brassHi : COL.neutral;
+const typeColor = (n) => n.kind === "expr" ? (COL[n.type] || COL.neutral) : kindColor(n);
+const sphereGeo = new THREE.SphereGeometry(1, 20, 14);
+ND.forEach((n, order) => {
+  n.order = order;
+  const r = n.kind === "expr" ? 0.2 : n.kind === "prog" ? 0.36 : 0.28;
+  n.color = new THREE.Color(kindColor(n)); n.colorT = n.color.clone();
+  const mat = new THREE.MeshStandardMaterial({ color: n.color, emissive: n.color, emissiveIntensity: 0.35, roughness: 0.4, metalness: 0.2 });
+  const sp = new THREE.Mesh(sphereGeo, mat); sp.scale.setScalar(r); sp.position.set(n.x, n.y, n.z);
+  n.sphere = L.ast.reg(sp, mat);
+  const above = n.children.length > 0 && n.depth !== 1;
+  let off = n.depth === 1 ? 0.55 + (n.idx % 3) * 0.6 : above ? 0.52 : -0.5 - (n.li % 2) * 0.42;
+  if (n.depth !== 1 && n.kind === "expr" && n.children.length) off = 0.46;
+  const lb = label(n.label, { color: n.kind === "expr" ? COL.foam : COL.brassHi, h: n.kind === "expr" ? 0.3 : 0.32, weight: 500 });
+  lb.sprite.position.set(n.x, n.y + off + (n.label.includes("\n") && n.depth !== 1 ? (above ? 0.25 : -0.25) : 0), n.z + 0.05);
+  n.lab = L.ast.reg(lb.sprite, lb.mat);
+  if (n.parent) {
+    const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(n.parent.x, n.parent.y, n.parent.z), new THREE.Vector3(n.x, n.y, n.z)]);
+    const lm = new THREE.LineBasicMaterial({ color: 0x4f7b86 });
+    n.edge = L.ast.reg(new THREE.Line(geo, lm), lm, 0.8);
+  }
+  n.sphere.rev = n.lab.rev = 0; if (n.edge) n.edge.rev = 0;
+});
+const nodeItems = (n) => [n.sphere, n.lab, n.edge].filter(Boolean);
+const astBox = () => {
+  const xs = ND.map((n) => n.x), ys = ND.map((n) => n.y);
+  return { min: new THREE.Vector3(Math.min(...xs) - 2.4, Math.min(...ys) - 1.6, -1), max: new THREE.Vector3(Math.max(...xs) + 2.4, Math.max(...ys) + 2.4, 1) };
+};
+const boxOf = (nodes, pad = 2.4) => {
+  const xs = nodes.map((n) => n.x), ys = nodes.map((n) => n.y);
+  return { min: new THREE.Vector3(Math.min(...xs) - pad, Math.min(...ys) - 1.8, -1), max: new THREE.Vector3(Math.max(...xs) + pad, Math.max(...ys) + 2.6, 1) };
+};
+
+/* ---- Tabla de símbolos ---- */
+function cardTexture(draw, w, h) {
+  const c = document.createElement("canvas"); c.width = Math.round(w * 100); c.height = Math.round(h * 100);
+  const g = c.getContext("2d"); g.fillStyle = COL.bg; g.beginPath(); g.roundRect(0, 0, c.width, c.height, 22); g.fill();
+  draw(g, c.width, c.height);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = ANISO; return t;
+}
+const symCards = SYMBOLS.map((s, i) => {
+  const W = 9, H = 5.6, col = COL[s.type];
+  const tex = cardTexture((g, w, h) => {
+    g.strokeStyle = col; g.lineWidth = 6; g.beginPath(); g.roundRect(3, 3, w - 6, h - 6, 22); g.stroke();
+    g.fillStyle = COL.mute; g.font = `600 26px ${MONO}`; g.fillText("GENE BANK · #" + (i + 1), 40, 58);
+    g.fillStyle = COL.foam; g.font = `600 70px ${MONO}`; g.fillText(s.name, 40, 140);
+    g.fillStyle = col; g.font = `600 44px ${MONO}`; g.fillText(s.type, 40, 210);
+    g.fillStyle = COL.mute; g.font = `500 28px ${MONO}`;
+    g.fillText("C11  " + s.c11, 40, 290); g.fillText("alcance  " + s.scope, 40, 336);
+    g.fillText("línea " + s.line + "   usos " + s.uses, 40, 382);
+    g.fillStyle = col; g.fillRect(40, 410, 5 + s.uses * 70, 10);
+  }, W, H);
+  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(W, H), mat); m.position.set((i - 1) * 10.2, 0.5, 3);
+  const it = L.sym.reg(m, mat); it.rev = 0; it.sym = s.name; return it;
+});
+const symLinks = [];
+ND.filter((n) => n.sym).forEach((n) => {
+  const card = symCards.find((c) => c.sym === n.sym); if (!card) return;
+  const type = SYMBOLS.find((s) => s.name === n.sym).type;
+  const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(n.x, n.y, n.z), new THREE.Vector3(card.obj.position.x, card.obj.position.y + 2.8, 3)]);
+  const lm = new THREE.LineBasicMaterial({ color: new THREE.Color(COL[type]) });
+  const it = L.sym.reg(new THREE.Line(geo, lm), lm, 0.45); it.rev = 0; symLinks.push(it);
+});
+
+/* ---- Chapín ---- */
+const srcPanel2 = new CodePanel(SRC_LINES, KW_SRC), gtPanel = new CodePanel(GT_LINES, KW_GT);
+const GAP = 3.2, totalW = srcPanel2.w + GAP + gtPanel.w;
+srcPanel2.mesh.position.x += -totalW / 2; gtPanel.mesh.position.x += -totalW / 2 + srcPanel2.w + GAP;
+srcPanel2.mesh.position.y += srcPanel2.h / 2; gtPanel.mesh.position.y += gtPanel.h / 2;
+L.gt.reg(srcPanel2.mesh, srcPanel2.mat); L.gt.reg(gtPanel.mesh, gtPanel.mat);
+{
+  const a = label("salida.kyn · Kynova", { color: COL.brass, h: 0.5, bg: null }), b = label("Chapin.gt · Chapín", { color: COL.brass, h: 0.5, bg: null });
+  a.sprite.position.set(-totalW / 2 + srcPanel2.w / 2, srcPanel2.h / 2 + 0.9, 0); b.sprite.position.set(-totalW / 2 + srcPanel2.w + GAP + gtPanel.w / 2, gtPanel.h / 2 + 0.9, 0);
+  L.gt.reg(a.sprite, a.mat); L.gt.reg(b.sprite, b.mat);
+  const arrowMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(COL.brass) });
+  const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.6, 3), arrowMat); arrow.rotation.z = -Math.PI / 2;
+  arrow.position.set(-totalW / 2 + srcPanel2.w + GAP / 2, 0, 0); L.gt.reg(arrow, arrowMat);
+}
+
+/* ---- Error semántico ---- */
+const errNodes = {};
+{
+  const mk = (txt, color, x, y, big) => { const lb = label(txt, { color, h: big ? 0.5 : 0.42, border: color }); lb.sprite.position.set(x, y, 0); return L.err.reg(lb.sprite, lb.mat); };
+  const sm = (color, x, y, r) => { const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.5, roughness: .4 }); const m = new THREE.Mesh(sphereGeo, mat); m.scale.setScalar(r); m.position.set(x, y, 0); return L.err.reg(m, mat); };
+  const edge = (x1, y1, x2, y2, c) => { const lm = new THREE.LineBasicMaterial({ color: c }); return L.err.reg(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x1, y1, 0), new THREE.Vector3(x2, y2, 0)]), lm), lm, 0.9); };
+  errNodes.root = sm(new THREE.Color(COL.brass), 0, 2.4, 0.5);
+  errNodes.rootL = mk("splice adam n", COL.brassHi, 0, 3.6, false);
+  errNodes.eL = edge(0, 2.4, -3.6, -0.6, 0x4f7b86); errNodes.eR = edge(0, 2.4, 3.6, -0.6, 0xef6b7f);
+  errNodes.a = sm(new THREE.Color(COL.adam), -3.6, -0.6, 0.42); errNodes.aL = mk("n : adam\n(entero)", COL.adam, -3.6, -2.1, false);
+  errNodes.b = sm(new THREE.Color(COL.err), 3.6, -0.6, 0.42); errNodes.bL = mk('"x" : cadena', COL.err, 3.6, -2.1, false);
+  errNodes.x = mk("✕  adam no acepta cadenas", COL.err, 0, -4.6, true);
+  Object.values(errNodes).forEach((it) => (it.rev = 0));
+}
+
+/* ---- Correcciones ---- */
+const FIXES = [
+  { t: "Entrada de datos", bad: "aguas(estrellas);", good: "clavar(estrellas);", note: "aguas solo imprime texto. Leer es clavar(x)." },
+  { t: "Paréntesis", bad: "100 - 25 * 2", good: "100 - (25 * 2)", note: "Se conservan los paréntesis del fuente." },
+  { t: "Tipo de texto", bad: 'va Personaje = "";', good: 'va cuento Personaje = "";', note: "En Chapín el texto lleva su propio tipo." },
+  { t: "Comentarios", bad: "(se perdían)", good: "// Codigo Andante generado…", note: "// y /* */ pasan al archivo traducido." },
+];
+const fixCards = FIXES.map((f, i) => {
+  const W = 10.4, H = 5.2;
+  const tex = cardTexture((g, w, h) => {
+    g.strokeStyle = COL.line; g.lineWidth = 4; g.beginPath(); g.roundRect(2, 2, w - 4, h - 4, 22); g.stroke();
+    g.fillStyle = COL.mute; g.font = `600 28px ${MONO}`; g.fillText(f.t.toUpperCase(), 44, 62);
+    g.fillStyle = COL.err; g.font = `600 26px ${MONO}`; g.fillText("ANTES", 44, 146);
+    g.font = `500 44px ${MONO}`; g.fillText(f.bad, 190, 146);
+    g.fillStyle = COL.ok; g.font = `600 26px ${MONO}`; g.fillText("AHORA", 44, 232);
+    g.font = `500 44px ${MONO}`; g.fillText(f.good, 190, 232);
+    g.fillStyle = COL.mute; g.font = `400 28px ${MONO}`; g.fillText(f.note, 44, 322);
+    g.strokeStyle = COL.err; g.lineWidth = 4; g.font = `500 44px ${MONO}`; const w2 = g.measureText(f.bad).width;
+    g.beginPath(); g.moveTo(186, 133); g.lineTo(194 + w2, 133); g.stroke();
+  }, W, H);
+  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(W, H), mat); m.position.set((i % 2 ? 1 : -1) * 5.6, (i < 2 ? 1 : -1) * 3.1, 0);
+  const it = L.fix.reg(m, mat); it.rev = 0; return it;
+});
+
+/* ---- Tubería (resumen) ---- */
+const PIPE = [
+  ["Código", "salida.kyn", SRC_LINES.length + " líneas"], ["Flex", "léxico", TOKENS.length + " tokens"], ["Bison", "sintaxis", NODE_N + " nodos"],
+  ["Semántica", "tipos", SYMBOLS.length + " símbolos"], ["Traductor", "Chapin.gt", GT_LINES.length + " líneas"],
+];
+const pipeItems = [], pulses = [];
+PIPE.forEach(([name, sub, num], i) => {
+  const x = (i - 2) * 7.4;
+  const mat = new THREE.MeshStandardMaterial({ color: COL.brass, emissive: COL.brass, emissiveIntensity: 0.25, roughness: 0.45, metalness: 0.4 });
+  const cyl = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.3, 0.7, 6), mat); cyl.position.set(x, 0, 0); cyl.rotation.x = 0.35;
+  const it = L.pipe.reg(cyl, mat); it.rev = 0; pipeItems.push(it);
+  [[name, 0.74, COL.brassHi, 2.7], [sub, 0.5, COL.mute, 1.7], [num, 0.6, COL.foam, -2.7]].forEach(([tx, h, c, y]) => {
+    const lb = label(tx, { color: c, h, bg: null, weight: 600 }); lb.sprite.position.set(x, y, 0.5); const li = L.pipe.reg(lb.sprite, lb.mat); li.rev = 0; pipeItems.push(li);
+  });
+  if (i < PIPE.length - 1) {
+    const bm = new THREE.MeshBasicMaterial({ color: 0x4f7b86 }); const bar = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.1, 0.1), bm); bar.position.set(x + 3.7, 0, 0);
+    const bi = L.pipe.reg(bar, bm, 0.8); bi.rev = 0; pipeItems.push(bi);
+  }
+});
+for (let i = 0; i < 3; i++) { const m = new THREE.MeshBasicMaterial({ color: COL.brassHi }); const s = new THREE.Mesh(sphereGeo, m); s.scale.setScalar(0.22); const it = L.pipe.reg(s, m); it.off = i / 3; pulses.push(it); }
+
+/* ============ PASOS ============ */
+const T = TOKENS.length;
+const STEPS = [
+  { tag: "PROBLEMA", title: "Un archivo llega de otro grupo", dur: 2.6,
+    body: ["El grupo 6 generó <code>salida.kyn</code> desde Andante. Antes de traducirlo a Chapín hay que saber si es un programa Kynova válido.",
+      `Son ${SRC_LINES.length} líneas: tres declaraciones, una lectura, un condicional con dos ramas, un ciclo y comentarios.`],
+    call: ["CUIDADO", "Un compilador no ve líneas ni palabras. Ve una cadena de caracteres. Lo primero es partirla en piezas."],
+    chg: [["+", `salida.kyn cargado (${SRC_LINES.length} líneas)`]] },
+  { tag: "IDEA", title: "Flex corta el texto en tokens", dur: 6,
+    body: ["El analizador léxico lee carácter por carácter y agrupa piezas con significado: palabras reservadas (<code>splice</code>, <code>atlas</code>), identificadores, números, cadenas y símbolos.",
+      `En este archivo salen ${T} tokens. Cada color es una categoría: latón para reservadas, coral para valores, cian para nombres.`],
+    call: ["IDEA CLAVE", "El léxico reconoce piezas. No valida si tienen sentido juntas."],
+    chg: [["+", `${T} tokens con línea y columna`], ["−", "espacios descartados"], ["t", "los comentarios se guardan aparte para el Chapín"]] },
+  { tag: "IDEA", title: "Bison arma el árbol", dur: 14,
+    body: ["El analizador sintáctico junta los tokens según la gramática. Cada instrucción es una rama y cada operación un nodo con sus operandos.",
+      "Es la estructura que imprime <code>kynova -a</code>. Gira la escena para verla desde otro lado."],
+    call: ["CONVIENE SABER", "Todo lo que sigue (tipos, símbolos, traducción) recorre este árbol. Ya no vuelve a mirar el texto."],
+    chg: [["+", `${NODE_N} nodos`], ["t", `${T} tokens → 1 árbol`]] },
+  { tag: "IDEA", title: "Los paréntesis cambian la forma del árbol", dur: 3,
+    body: ["En <code>tiempo = (tiempo - 5.50) * 2</code> los paréntesis obligan a restar primero. Por eso la resta queda dentro, como hija de la multiplicación.",
+      "Regla para leer el árbol: lo que está más abajo se calcula antes."],
+    call: ["CONVIENE SABER", "El árbol ahora guarda una marca de que esa expresión venía entre paréntesis. Así el traductor los escribe igual que el fuente."],
+    chg: [["+", "marca «venía entre paréntesis» en cada nodo"], ["t", "el traductor ya no adivina por precedencia"]] },
+  { tag: "IDEA", title: "ryan atlas es un else-if", dur: 3,
+    body: ["<code>atlas (estrellas >= 20)</code> tiene dos ramas. La rama <code>ryan</code> contiene otro condicional con su propia condición.",
+      "En el árbol es un condicional dentro del otro. Kynova lo escribe corto con <code>ryan atlas</code>."],
+    call: ["CUIDADO", "Chapín no tiene else-if. Se queda como <code>sino { cabal … }</code>, como indica la columna Chapin del Excel."],
+    chg: [["t", "ryan atlas → sino { cabal … }"]] },
+  { tag: "IDEA", title: "Los tipos se calculan sobre el árbol", dur: 7,
+    body: ["Cada color es un tipo: <code>adam</code> entero, <code>eve</code> decimal, <code>plasmid</code> texto.",
+      "<code>tiempo - 5.50</code> es eve. <code>(estrellas + 10) / 2</code> es adam. Las comparaciones no tienen tipo de dato."],
+    call: ["REGLAS", "eve acepta adam, pero adam no acepta eve. plasmid solo acepta cadenas: no se suma, no se compara, no se lee con radio."],
+    chg: [["t", "cada nodo recibe su tipo"]] },
+  { tag: "PROBLEMA", title: "El error que el compilador sí atrapa", dur: 3.5,
+    body: ["Si el programa mezcla tipos, el análisis semántico lo rechaza. Aquí intentamos guardar texto en un entero (<code>tests/invalid/18</code>).",
+      "El mensaje dice la línea, la columna y cómo arreglarlo."],
+    call: ["MENSAJE REAL", "error semántico: tipos incompatibles: no se puede asignar una cadena a 'n' (adam); use plasmid", true],
+    chg: [["+", "1 error de ejemplo"], ["−", "el programa se marca INVÁLIDO"], ["t", "salida.kyn no tiene este error"]] },
+  { tag: "SOLUCION", title: "Gene Bank: la tabla de símbolos", dur: 4,
+    body: ["Cada variable se registra una sola vez con su tipo, su tipo en C11, su alcance, la línea donde se declaró y cuántas veces se usa.",
+      "Las líneas conectan cada uso en el árbol con su ficha. Usar un nombre sin declarar es error."],
+    call: ["CONVIENE SABER", "<code>Personaje</code> es plasmid y se guarda como <code>const char *</code>. estrellas es int y tiempo es double."],
+    chg: [["+", `${SYMBOLS.length} símbolos`], ["t", "estrellas es la más usada (6 veces)"]] },
+  { tag: "SOLUCION", title: "Del árbol sale Chapín", dur: 11,
+    body: ["El traductor recorre el árbol y escribe <code>Chapin.gt</code> línea por línea. Cambia las palabras, conserva la estructura, los paréntesis y los comentarios.",
+      "<code>ryan atlas</code> sale como <code>sino</code> con un <code>cabal</code> adentro."],
+    table: [["splice adam", "va pisto"], ["splice eve", "va quetzal"], ["splice plasmid", "va cuento"], ["atlas", "cabal"], ["ryan", "sino"], ["vita", "brega"], ["radio", "clavar"], ["diary", "shute"]],
+    chg: [["+", `Chapin.gt de ${GT_LINES.length} líneas`], ["t", "comentarios y paréntesis conservados"]] },
+  { tag: "CASO", title: "Lo que el otro equipo nos devolvió", dur: 4.5,
+    body: ["Al probar el primer Chapín, el grupo de Chapín encontró cuatro diferencias con lo que su compilador espera. Las cuatro quedaron corregidas.",
+      "Una de ellas, la entrada, salió de seguir el Excel al pie de la letra y resultó incorrecta."],
+    call: ["CONVIENE SABER", "El Excel decía <code>aguas</code> para leer, pero el compilador de Chapín usa <code>clavar(x)</code>. Y <code>cuento</code> no aparece en el Excel. Manda el compilador, no la tabla."],
+    chg: [["t", "aguas → clavar (leer una variable)"], ["t", "100 - 25 * 2 → 100 - (25 * 2)"], ["t", "va → va cuento para texto"], ["+", "comentarios en el Chapín"]] },
+  { tag: "RESUMEN", title: "El camino completo", dur: 3.2,
+    body: ["Un archivo <code>.kyn</code> entra y un archivo <code>.gt</code> sale. En medio hay cuatro pasos, y cada uno revisa algo distinto.",
+      "Flex corta el texto. Bison arma el árbol. La semántica revisa tipos y nombres. El traductor escribe Chapín."],
+    call: ["A CONTINUACIÓN", "Probar más archivos del otro grupo y confirmar con ellos cómo debe verse un else-if en Chapín."],
+    chg: [["+", "salida.kyn válido, sin errores"], ["+", "Chapin.gt listo para el otro grupo"]] },
+];
+const TOTAL = STEPS.length;
+
+/* ---- Glosario ---- */
+const GLOSS = [
+  ["Las cuatro fases", "compilador", "Compilador", "", "Un programa que lee otro programa escrito en un lenguaje, comprueba que esté bien y lo convierte a otra cosa. Piensa en un traductor que primero revisa que la frase tenga sentido.", "Kynova no ejecuta nada. Lee un archivo <b>.kyn</b>, lo revisa y escribe un archivo <b>.gt</b> en Chapín.", 1],
+  ["Las cuatro fases", "lexico", "Análisis léxico", "léxico", "La primera lectura. Recorre el texto letra por letra y lo corta en piezas con nombre. No entiende qué significan juntas: solo reconoce cada pieza, como separar una frase en palabras.", "<b>estrellas = 20;</b> se corta en 4 piezas: un nombre, un igual, un número y un punto y coma.", 2],
+  ["Las cuatro fases", "flex", "Flex", "herramienta", "Una herramienta que escribe por ti el analizador léxico. Tú le das una lista de reglas («esto es un número», «esto es una palabra reservada») y Flex genera el programa en C que las aplica.", "Las reglas están en <b>src/kynova.l</b>. Flex es el que descarta espacios y reconoce <b>splice</b>, <b>atlas</b> o <b>vita</b>.", 2],
+  ["Las cuatro fases", "sintaxis", "Análisis sintáctico", "sintaxis", "La segunda lectura. Comprueba que las piezas vengan en un orden permitido, igual que la gramática de una oración. Si el orden es válido, arma el árbol del programa.", "<b>estrellas = 20;</b> es válido. <b>= estrellas 20</b> tiene las mismas piezas pero en mal orden, y se rechaza.", 3],
+  ["Las cuatro fases", "bison", "Bison", "herramienta", "La herramienta hermana de Flex. Tú le das la gramática del lenguaje y Bison genera el analizador sintáctico. Flex corta el texto en piezas y Bison las junta.", "La gramática está en <b>src/kynova.y</b>.", 3],
+  ["Las cuatro fases", "semantica", "Análisis semántico", "semántica", "La tercera revisión. Ya no mira si está bien escrito sino si tiene sentido: que cada variable esté declarada antes de usarla y que los tipos sean compatibles.", "Guardar texto en un entero (<b>splice adam n = \"x\";</b>) está bien escrito, pero no tiene sentido. Lo rechaza esta fase.", 7],
+  ["Las cuatro fases", "traductor", "Traductor", "generador", "La última fase. Recorre el árbol y escribe el programa equivalente en otro lenguaje.", "Convierte <b>splice adam</b> en <b>va pisto</b>, <b>atlas</b> en <b>cabal</b>, y así hasta producir <b>Chapin.gt</b>.", 9],
+  ["Piezas del programa", "token", "Token", "", "Cada pieza que sale del análisis léxico. Tiene una categoría, el texto que la formó y el lugar donde aparece (línea y columna).", "En este archivo hay 113 tokens. Ejemplos: <b>ATLAS</b>, <b>ID «estrellas»</b>, <b>ENTERO 20</b>, <b>PUNTO_COMA</b>.", 2],
+  ["Piezas del programa", "reservada", "Palabra reservada", "", "Una palabra que el lenguaje se guarda para sí mismo. Tiene un significado fijo y no puede usarse como nombre de variable.", "En Kynova: <b>splice, adam, eve, plasmid, radio, diary, atlas, ryan, vita</b>.", 2],
+  ["Piezas del programa", "identificador", "Identificador", "nombre", "Un nombre que elige quien programa, casi siempre para una variable.", "<b>estrellas</b>, <b>tiempo</b> y <b>Personaje</b>.", 2],
+  ["Piezas del programa", "gramatica", "Gramática", "", "El conjunto de reglas que dice qué combinaciones de piezas forman un programa válido. Es el manual de orden del lenguaje.", "Una asignación es: un nombre, un <b>=</b>, una expresión y un <b>;</b>.", 3],
+  ["Piezas del programa", "ast", "Árbol de sintaxis (AST)", "árbol", "El programa convertido en un árbol. Cada instrucción es una rama y cada operación es un nodo con sus operandos. Lo que está más abajo se calcula antes. Las fases siguientes trabajan sobre este árbol y ya no vuelven al texto.", "<b>AST</b> viene de <i>Abstract Syntax Tree</i>. El de <b>salida.kyn</b> tiene 59 nodos.", 3],
+  ["Piezas del programa", "nodo", "Nodo", "", "Un punto del árbol: una instrucción, una operación o un valor suelto.", "<b>*</b> es un nodo con dos hijos: la resta y el número 2.", 4],
+  ["Piezas del programa", "precedencia", "Precedencia", "", "El orden en que se calculan las operaciones. La multiplicación y la división van antes que la suma y la resta. Los paréntesis cambian ese orden.", "En <b>(tiempo - 5.50) * 2</b> los paréntesis obligan a restar primero.", 4],
+  ["Revisiones y errores", "tipo", "Tipo de dato", "", "La clase de valor que guarda una variable. Evita mezclar cosas que no se pueden mezclar.", "<b>adam</b> es entero, <b>eve</b> es decimal y <b>plasmid</b> es texto.", 6],
+  ["Revisiones y errores", "simbolos", "Tabla de símbolos (Gene Bank)", "", "La lista de todas las variables del programa, con su tipo, su alcance, la línea donde se declararon y cuántas veces se usan. El compilador la consulta cada vez que ve un nombre.", "En <b>salida.kyn</b> hay 3 símbolos. <b>estrellas</b> es la más usada, con 6 usos.", 8],
+  ["Revisiones y errores", "errores", "Error léxico, sintáctico o semántico", "", "El nombre del error dice qué fase lo atrapó. Léxico: una pieza que no existe, como un carácter raro. Sintáctico: piezas en mal orden, como un <b>;</b> que falta. Semántico: todo bien escrito pero sin sentido, como mezclar tipos.", "Los 18 casos de <b>tests/invalid</b> cubren los tres tipos.", 7],
+  ["Revisiones y errores", "valido", "Programa válido o inválido", "", "El veredicto final de <b>kynova</b>. Es válido cuando pasa las tres revisiones sin errores. Solo entonces genera el Chapín.", "<b>salida.kyn</b>: programa VÁLIDO.", 11],
+  ["Kynova y Chapín", "kynova", "Kynova (.kyn)", "", "Nuestro lenguaje. Su vocabulario viene de BioShock, pero la gramática y las reglas son las de un lenguaje imperativo normal.", "<b>splice</b> declara, <b>atlas</b> es el si, <b>vita</b> es el mientras, <b>diary</b> muestra y <b>radio</b> lee.", 1],
+  ["Kynova y Chapín", "chapin", "Chapín (.gt)", "", "El lenguaje de otro grupo, que es nuestro destino. Cada grupo traduce hacia el lenguaje de otro.", "<b>va pisto</b> es entero, <b>va quetzal</b> es decimal, <b>va cuento</b> es texto, <b>clavar</b> lee y <b>shute</b> muestra.", 9],
+  ["Kynova y Chapín", "elseif", "Else-if (ryan atlas)", "", "Una condición que se revisa solo cuando la anterior falló: «si no, y además si…». Kynova lo escribe corto con <b>ryan atlas</b>. Chapín no lo tiene.", "En Chapín se escribe como un <b>cabal</b> dentro de un <b>sino</b>.", 5],
+];
+const GBOX = $("gloss"), GLIST = $("glist"), GQ = $("gq");
+const groups = [...new Set(GLOSS.map((g) => g[0]))];
+GLIST.innerHTML = `<p class="gintro">Un compilador es una cadena de pasos. Cada paso revisa algo distinto y le pasa el resultado al siguiente. Aquí están las palabras que usa este recorrido.</p>` +
+  groups.map((gr) => `<h3 class="grp">${gr}</h3>` + GLOSS.filter((g) => g[0] === gr).map((g) =>
+    `<article class="gent" id="g-${g[1]}"><h4>${g[2]}${g[3] ? `<small>${g[3]}</small>` : ""}</h4><p>${g[4]}</p><p class="ex"><b>Aquí:</b> ${g[5]}</p><button class="gstep" type="button" data-step="${g[6]}">Ver en el paso ${g[6]}</button></article>`).join("")).join("") +
+  `<p class="gnone" id="gnone">Nada coincide con esa búsqueda.</p>`;
+let gOpener = null;
+function showTab(name) {
+  const g = name === "gloss";
+  $("gguide").hidden = g; GLIST.hidden = !g; GQ.hidden = !g;
+  $("t-guide").setAttribute("aria-selected", String(!g)); $("t-gloss").setAttribute("aria-selected", String(g));
+}
+$("t-guide").addEventListener("click", () => { showTab("guide"); $("gguide").scrollTop = 0; });
+$("t-gloss").addEventListener("click", () => { showTab("gloss"); GLIST.scrollTop = 0; GQ.focus(); });
+function openGloss(id) {
+  gOpener = document.activeElement; GBOX.classList.add("on"); GQ.value = ""; filterGloss();
+  showTab(id ? "gloss" : "guide");
+  const el = id && $("g-" + id);
+  if (!id) { $("gguide").scrollTop = 0; $("t-guide").focus(); return; }
+  if (el) { el.scrollIntoView({ block: "start" }); el.classList.remove("hit"); void el.offsetWidth; el.classList.add("hit"); GQ.blur(); $("gclose").focus(); } else { GLIST.scrollTop = 0; GQ.focus(); }
+}
+function closeGloss() { GBOX.classList.remove("on"); if (gOpener && gOpener.focus) gOpener.focus(); }
+function filterGloss() {
+  const q = GQ.value.trim().toLowerCase(); let any = false;
+  GLIST.querySelectorAll(".gent").forEach((e) => { const ok = !q || e.textContent.toLowerCase().includes(q); e.style.display = ok ? "" : "none"; any ||= ok; });
+  GLIST.querySelectorAll("h3.grp").forEach((h) => { let n = h.nextElementSibling, vis = false; while (n && n.classList.contains("gent")) { if (n.style.display !== "none") vis = true; n = n.nextElementSibling; } h.style.display = vis ? "" : "none"; });
+  $("gnone").style.display = any ? "none" : "block";
+}
+$("b-gloss").addEventListener("click", () => openGloss());
+$("gclose").addEventListener("click", closeGloss);
+GBOX.addEventListener("click", (e) => { if (e.target === GBOX) closeGloss(); });
+GQ.addEventListener("input", filterGloss);
+GLIST.addEventListener("click", (e) => { const b = e.target.closest(".gstep"); if (b) { closeGloss(); go(+b.dataset.step - 1); } });
+$("panel").addEventListener("click", (e) => { const t = e.target.closest(".term"); if (t) openGloss(t.dataset.g); });
+const LINKS = [[/analizador léxico|léxico/, "lexico"], [/flex/, "flex"], [/bison/, "bison"], [/tokens?/, "token"], [/analizador sintáctico|sintaxis/, "sintaxis"], [/gramática/, "gramatica"], [/árbol/, "ast"],
+  [/precedencia/, "precedencia"], [/análisis semántico|semántica/, "semantica"], [/gene bank|tabla de símbolos/, "simbolos"], [/compilador/, "compilador"], [/traductor/, "traductor"]];
+function linkTerms(html, used) {
+  // solo se enlaza texto suelto: nunca dentro de <code> ni de otro enlace
+  const parts = html.split(/(<[^>]+>)/); let skip = 0;
+  return parts.map((seg) => {
+    if (seg.startsWith("<")) { if (/^<(code|button)\b/.test(seg)) skip++; else if (/^<\/(code|button)>/.test(seg)) skip--; return seg; }
+    if (skip > 0) return seg;
+    for (const [re, id] of LINKS) {
+      if (used.has(id)) continue;
+      const m = new RegExp("(?<![\\p{L}])(" + re.source + ")(?![\\p{L}])", "iu");
+      if (m.test(seg)) { used.add(id); seg = seg.replace(m, (x) => `<button type="button" class="term" data-g="${id}">${x}</button>`); }
+    }
+    return seg;
+  }).join("");
+}
+
+/* ---- Panel derecho ---- */
+const panel = $("panel"), listEl = $("steplist");
+STEPS.forEach((s, i) => {
+  const li = document.createElement("li"); const b = document.createElement("button");
+  b.type = "button"; b.className = "stp"; b.dataset.i = i; b.innerHTML = `<i>${String(i + 1).padStart(2, "0")}</i><span>${s.title}</span>`; b.title = s.title;
+  b.addEventListener("click", () => go(i)); li.appendChild(b); listEl.appendChild(li);
+});
+function renderPanel(i) {
+  const s = STEPS[i];
+  const sg = { "+": "p", "−": "m", t: "t" }, sym = { "+": "+", "−": "−", t: "~" };
+  const used = new Set();
+  panel.innerHTML = `
+    <div class="meta"><span class="tag ${s.tag}">${s.tag === "SOLUCION" ? "SOLUCIÓN" : s.tag}</span><span>Paso ${i + 1} de ${TOTAL}</span></div>
+    <h1>${s.title}</h1>
+    ${s.body.map((p) => `<p>${linkTerms(p, used)}</p>`).join("")}
+    ${s.call ? `<div class="call"><b>${s.call[0]}</b>${s.call[2] ? `<pre>${s.call[1]}</pre>` : linkTerms(s.call[1], used)}</div>` : ""}
+    ${s.table ? `<table class="map"><tbody>${s.table.map((r) => `<tr><td>${r[0]}</td><td>→ ${r[1]}</td></tr>`).join("")}</tbody></table>` : ""}
+    <div class="chg"><b class="h">Qué cambió</b><ul>${s.chg.map(([k, t]) => `<li><s class="${sg[k]}">${sym[k]}</s><span>${t}</span></li>`).join("")}</ul></div>
+    <div class="nav"><button type="button" id="b-prev" ${i === 0 ? "disabled" : ""}>Atrás</button><button type="button" id="b-next" ${i === TOTAL - 1 ? "disabled" : ""}>${i === TOTAL - 1 ? "Fin" : "Siguiente: " + STEPS[i + 1].title}</button></div>
+    <div class="kbd">← → paso · R repetir · espacio pausa</div>`;
+  $("b-prev").onclick = () => go(i - 1); $("b-next").onclick = () => go(i + 1);
+  panel.scrollTop = 0;
+  listEl.querySelectorAll(".stp").forEach((b, k) => { b.toggleAttribute("aria-current", k === i); if (k === i) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current"); b.classList.toggle("done", k < i); });
+  $("legend").classList.toggle("on", i === 5);
+}
+
+/* ---- Cámara ---- */
+function framePose(box, { pad = 1.14, az = 0.16, el = 0.11 } = {}) {
+  const c = box.min.clone().add(box.max).multiplyScalar(0.5), w = box.max.x - box.min.x, h = box.max.y - box.min.y;
+  const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const d = Math.max(h / (2 * t), w / (2 * t * camera.aspect)) * pad + (box.max.z - box.min.z) / 2 + 1.5;
+  return { pos: new THREE.Vector3(c.x + d * az, c.y + d * el, c.z + d), target: c };
+}
+const codeBox = () => ({ min: new THREE.Vector3(-srcPanel.w / 2, -srcPanel.h / 2, 0), max: new THREE.Vector3(srcPanel.w / 2, srcPanel.h / 2 + 0.2, 0) });
+const gtBox = () => ({ min: new THREE.Vector3(-totalW / 2 - 0.5, -gtPanel.h / 2 - 0.5, 0), max: new THREE.Vector3(totalW / 2 + 0.5, gtPanel.h / 2 + 2, 0) });
+const POSES = [
+  () => framePose(codeBox(), { az: 0.03, el: 0.02, pad: 1.04 }),
+  () => { // encuadra solo el área que ocupan las fichas
+    const xs = tokItems.map((t) => t.x - srcPanel.w / 2), ys = tokItems.map((t) => t.y + srcPanel.h / 2);
+    return framePose({ min: new THREE.Vector3(Math.min(...xs) - 1, Math.min(...ys) - 0.7, 0), max: new THREE.Vector3(Math.max(...xs) + 1, Math.max(...ys) + 0.7, 0) }, { az: 0.02, el: 0.015, pad: 1.0 });
+  },
+  () => framePose(astBox()),
+  () => framePose(boxOf(ND.filter((n) => n.paren), 3.2), { pad: 1.1 }),
+  () => framePose(boxOf(ND.filter((n) => n.chain), 2.6), { pad: 1.1 }),
+  () => framePose(astBox()),
+  () => framePose({ min: new THREE.Vector3(-8, -6, -1), max: new THREE.Vector3(8, 5, 1) }, { az: 0.12, el: 0.06, pad: 1.05 }),
+  () => framePose({ min: new THREE.Vector3(-17, -3.4, -1), max: new THREE.Vector3(17, 4.6, 1) }, { az: 0.06, el: 0.04, pad: 1.0 }),
+  () => framePose(gtBox(), { az: 0.06, el: 0.04, pad: 1.0 }),
+  () => framePose({ min: new THREE.Vector3(-11, -6, -1), max: new THREE.Vector3(11, 6, 1) }, { az: 0.03, el: 0.02, pad: 1.02 }),
+  () => framePose({ min: new THREE.Vector3(-18.5, -4.2, -1), max: new THREE.Vector3(18.5, 4.2, 1) }, { az: 0.05, el: 0.12, pad: 1.0 }),
+];
+const leftNodes = () => ND.filter((n) => n.top >= 0 && n.top < 7), rightNodes = () => ND.filter((n) => n.top >= 8);
+const panelBox = (x0, w, panelH) => ({ min: new THREE.Vector3(x0 - 0.3, -panelH / 2 - 0.3, 0), max: new THREE.Vector3(x0 + w + 0.3, panelH / 2 + 1.6, 0) });
+const TOURS = {
+  2: [[0.5, () => framePose(boxOf(leftNodes(), 2.6), { pad: 1.05 })], [0.66, () => framePose(boxOf(ND.filter((n) => n.chain), 2.6), { pad: 1.05 })], [0.84, () => framePose(boxOf(rightNodes(), 2.6), { pad: 1.05 })], [0.95, () => framePose(astBox())]],
+  5: [[0.3, () => framePose(boxOf(ND.filter((n) => n.chain), 2.6), { pad: 1.05 })], [0.75, () => framePose(astBox())]],
+  8: [[0.22, () => framePose(panelBox(-totalW / 2, srcPanel2.w, srcPanel2.h), { pad: 1.0, az: 0.04, el: 0.03 })], [0.5, () => framePose(panelBox(-totalW / 2 + srcPanel2.w + GAP, gtPanel.w, gtPanel.h), { pad: 1.0, az: 0.04, el: 0.03 })], [0.92, () => framePose(gtBox(), { az: 0.06, el: 0.04, pad: 1.0 })]],
+};
+let tween = null, userMoved = false, cur = -1, p = 0, paused = false, tourIdx = 0;
+if (controls) controls.addEventListener("start", () => { userMoved = true; tween = null; });
+function flyTo(pose, instant) {
+  if (!controls) return;
+  if (instant) { camera.position.copy(pose.pos); controls.target.copy(pose.target); tween = null; return; }
+  tween = { t: 0, p0: camera.position.clone(), t0: controls.target.clone(), p1: pose.pos, t1: pose.target };
+}
+
+/* ---- Estado por paso ---- */
+function setStep(i) {
+  cur = i; p = REDUCED ? 1 : 0; userMoved = false; tourIdx = 0;
+  const on = (k, a = 1) => (L[k].target = a);
+  Object.keys(L).forEach((k) => (L[k].target = 0));
+  if (i <= 1) { on("code"); srcItem.dimT = i === 1 ? 0 : 1; }
+  if (i === 2) { on("ast"); }
+  if (i >= 3 && i <= 6 && i !== 6) on("ast");
+  if (i === 5 || i === 7) ND.forEach((n) => (n.colorT.set(typeColor(n))));
+  else ND.forEach((n) => (n.colorT.set(kindColor(n))));
+  if (i === 6) on("err");
+  if (i === 7) { on("ast", 0.9); on("sym"); }
+  if (i === 8) on("gt");
+  if (i === 9) on("fix");
+  if (i === 10) on("pipe");
+  // atenuar nodos fuera del foco
+  const focus = i === 3 ? (n) => n.paren : i === 4 ? (n) => n.chain : i === 7 ? (n) => !!n.sym : null;
+  ND.forEach((n) => { const d = focus ? (focus(n) ? 1 : (i === 7 ? 0.14 : 0.12)) : 1; nodeItems(n).forEach((it) => (it.dimT = d)); });
+  if (i === 7) ND.forEach((n) => (n.lab.dimT = 0));
+  if (i >= 3 && i !== 2) ND.forEach((n) => nodeItems(n).forEach((it) => (it.rev = 1)));
+  if (i === 2) ND.forEach((n) => nodeItems(n).forEach((it) => (it.rev = 0)));
+  if (i === 1) tokItems.forEach((it) => (it.rev = 0));
+  if (i === 7) { symCards.concat(symLinks).forEach((it) => (it.rev = 0)); }
+  if (i === 6) Object.values(errNodes).forEach((it) => (it.rev = 0));
+  if (i === 9) fixCards.forEach((it) => (it.rev = 0));
+  if (i === 10) pipeItems.forEach((it) => (it.rev = 0));
+  if (i === 0) { srcPanel.draw(0); }
+  renderPanel(i);
+  flyTo(POSES[i](), false);
+  const h = "#paso-" + (i + 1); if (location.hash !== h) history.replaceState(null, "", h);
+}
+function go(i) { i = Math.max(0, Math.min(TOTAL - 1, i)); if (i !== cur) setStep(i); else { p = 0; } }
+$("b-replay").onclick = () => { setStep(cur); };
+$("b-pause").onclick = () => { paused = !paused; $("b-pause").textContent = paused ? "Seguir" : "Pausa"; };
+addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && GBOX.classList.contains("on")) { closeGloss(); return; }
+  if (GBOX.classList.contains("on")) return;
+  if (e.target instanceof HTMLInputElement) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === "ArrowRight") go(cur + 1); else if (e.key === "ArrowLeft") go(cur - 1);
+  else if (e.key === "r" || e.key === "R") setStep(cur);
+  else if (e.key === " " && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); $("b-pause").click(); }
+});
+addEventListener("hashchange", () => { const m = /^#paso-(\d+)$/.exec(location.hash); if (m) go(+m[1] - 1); });
+
+/* ---- Contadores ---- */
+const cT = $("c-tok"), cN = $("c-nod"), cS = $("c-sim"), cE = $("c-err");
+function counters(i, pr) {
+  const f = (v) => (v == null ? "—" : String(v));
+  cT.textContent = f(i < 1 ? null : i === 1 ? Math.round(ease(pr) * T) : T);
+  cN.textContent = f(i < 2 ? null : i === 2 ? Math.round(clamp01(pr / 0.45) * NODE_N) : NODE_N);
+  cS.textContent = f(i < 7 ? null : i === 7 ? Math.round(pr * SYMBOLS.length) : SYMBOLS.length);
+  const err = i < 1 ? null : i === 6 ? 1 : 0;
+  cE.textContent = f(err); cE.classList.toggle("bad", err === 1);
+  cE.nextElementSibling?.remove();
+  if (err === 1) cE.insertAdjacentHTML("afterend", "<em>ejemplo</em>");
+}
+
+/* ---- Bucle ---- */
+const clock = new THREE.Timer(); clock.connect(document);
+const DUR = STEPS.map((s) => s.dur);
+function resize() {
+  if (!renderer) return;
+  const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  if (cur >= 0 && !userMoved && !tween) flyTo(POSES[cur](), true);
+}
+new ResizeObserver(resize).observe(stage);
+const tmpC = new THREE.Color();
+function frame(now) {
+  clock.update(now); const dt = Math.min(clock.getDelta(), 0.05);
+  if (!paused && cur >= 0) p = Math.min(1, p + dt / DUR[cur]);
+  const k = 1 - Math.pow(0.001, dt * 1.6);
+  Object.values(L).forEach((l) => l.update(k));
+  const i = cur;
+  const tour = TOURS[i];
+  if (tour && !userMoved) while (tourIdx < tour.length && p >= tour[tourIdx][0]) flyTo(tour[tourIdx++][1]());
+  if (i === 0) srcPanel.draw(Math.ceil(ease(p) * SRC_LINES.length));
+  if (i === 1) { const n = Math.round(ease(p) * T * 1.04); tokItems.forEach((it, j) => { it.rev = clamp01((n - j) / 4); it.obj.position.z = it.zBase + (1 - clamp01(it.rev)) * 1.2; }); }
+  if (i === 2) { const n = clamp01(p / 0.45) * (NODE_N + 6); ND.forEach((nd) => { const r = clamp01((n - nd.order) / 3); nd.sphere.rev = nd.lab.rev = r; if (nd.edge) nd.edge.rev = clamp01((n - nd.order + 1) / 2); }); }
+  if (i === 3 || i === 4) { const t = clock.getElapsed(); ND.forEach((nd) => { if ((i === 3 && nd.paren) || (i === 4 && nd.chain)) { const s = 1 + 0.14 * Math.sin(t * 3 + nd.order); nd.sphere.obj.scale.setScalar((nd.kind === "expr" ? 0.2 : 0.28) * s); } }); }
+  ND.forEach((nd) => { nd.color.lerp(nd.colorT, 0.06); nd.sphere.mat.color.copy(nd.color); nd.sphere.mat.emissive.copy(nd.color); });
+  if (i === 6) { const keys = ["root", "rootL", "eL", "a", "aL", "eR", "b", "bL", "x"]; keys.forEach((kk, j) => (errNodes[kk].rev = clamp01((p * keys.length * 1.1 - j) / 1.2))); const s = 1 + 0.18 * Math.sin(clock.getElapsed() * 5); errNodes.b.obj.scale.setScalar(0.42 * s * (0.25 + 0.75 * ease(errNodes.b.rev))); }
+  if (i === 7) { symCards.forEach((c, j) => (c.rev = clamp01((p * 3.6 - j) / 1))); symLinks.forEach((l, j) => (l.rev = clamp01((p * 1.6 - 0.9 - j * 0.02)))); }
+  if (i === 8) { srcPanel2.draw(SRC_LINES.length); gtPanel.draw(Math.ceil(clamp01((p - 0.5) / 0.4) * GT_LINES.length)); }
+  if (i === 9) fixCards.forEach((c, j) => (c.rev = clamp01((p * 5 - j) / 1)));
+  if (i === 10) { pipeItems.forEach((it, j) => (it.rev = clamp01((p * pipeItems.length * 1.2 - j) / 2))); const t = clock.getElapsed() * 0.22; pulses.forEach((it) => { const u = ((t + it.off) % 1); it.obj.position.set(-14.8 + u * 29.6, 0, 0.4); it.rev = clamp01(p * 2 - 0.6); }); }
+  counters(Math.max(i, 0), p);
+  if (tween && controls) { tween.t = Math.min(1, tween.t + dt / 1.25); const e = ease(tween.t); camera.position.lerpVectors(tween.p0, tween.p1, e); controls.target.lerpVectors(tween.t0, tween.t1, e); if (tween.t >= 1) tween = null; }
+  if (controls) controls.update();
+  if (renderer) renderer.render(scene, camera);
+}
+
+{
+  resize();
+  const m = /^#paso-(\d+)$/.exec(location.hash); setStep(m ? Math.max(0, Math.min(TOTAL - 1, +m[1] - 1)) : 0);
+  if (controls) flyTo(POSES[cur](), true);
+  if (renderer) renderer.setAnimationLoop(frame);
+}
+</script>
+
+</body></html>

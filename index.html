@@ -4,7 +4,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Josefin+Sans:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Roboto:wght@400;500;700&family=Barlow+Condensed:wght@600;700;800&display=swap">
 <style>
 /* Concepto: sala de máquinas de Rapture. Fondo marino, latón para lo que se nombra, color por tipo de dato. */
 :root {
@@ -182,12 +182,102 @@ table.map td:last-child { color: var(--brass); }
   .hint { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+
+/* ===== Rediseño: caparazón claro (estilo guía de armado) con la escena 3D oscura adentro ===== */
+:root {
+  --abyss: #eef2f8; --deep: #ffffff; --panel: #f4f7fb; --line: #d6deea;
+  --brass: #9a6200; --gold: #f5b82e; --navy: #1d2b55;
+  --foam: #1b2540; --mute: #5b6985;
+  --adam: #1c78b8; --eve: #d4602b; --plasmid: #2b9449; --err: #d3304a;
+  --f-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --f-body: "Roboto", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+body { background: #e7edf6; font-size: 15px; }
+#app { grid-template-columns: minmax(0, 1fr) 410px; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "head head" "stage panel" "steps steps"; gap: 14px; padding: 14px 18px 16px; }
+header { padding: 0; border: 0; background: none; gap: 16px; }
+.brand { flex-direction: row; align-items: center; gap: 12px; }
+.brand .logo { width: 44px; height: 44px; flex: none; }
+.brand b { font: 800 34px/1 var(--f-display); letter-spacing: .06em; color: var(--navy); }
+.brand b em { font-style: normal; color: #e0a017; }
+.brand span { margin: 0 0 0 6px; padding-left: 14px; border-left: 1px solid var(--line); font-size: 13px; color: var(--mute); align-self: center; }
+.brand .txt { display: flex; align-items: center; }
+.ctr { min-width: 0; padding: 5px 14px; border: 0; border-radius: 12px; background: #fff; box-shadow: 0 1px 3px rgba(29, 43, 85, .14); }
+.ctr small { font: 700 10px/1.2 var(--f-display); letter-spacing: .14em; }
+.ctr strong { font-size: 20px; color: var(--navy); }
+.gbtn { padding: 9px 18px; border: 0; border-radius: 12px; background: var(--navy); color: #fff; font: 700 14px var(--f-display); letter-spacing: .1em; box-shadow: 0 2px 0 #0f1a3b; }
+.gbtn:hover { background: #2a3d78; color: #fff; }
+.term { border-bottom-color: var(--gold); }
+.term:hover { color: var(--brass); }
+
+#stage { border-radius: 20px; overflow: hidden; box-shadow: 0 2px 6px rgba(29, 43, 85, .16); background: radial-gradient(ellipse at 50% 40%, #0d2a36 0%, #06141b 72%);
+  --foam: #d8ecee; --mute: #86a9b1; --line: #1f4552; --brass: #e2a93b; --adam: #5ab4e6; --eve: #f08a5d; --plasmid: #7bd88f; --err: #ef6b7f; }
+.bench { position: absolute; left: 14px; top: 14px; z-index: 3; display: flex; align-items: center; gap: 10px; padding: 7px 14px 7px 8px; border-radius: 14px; background: rgba(255, 255, 255, .94); color: var(--navy); box-shadow: 0 1px 4px rgba(0, 0, 0, .3); }
+.bench i { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--gold); font: 800 15px var(--f-display); font-style: normal; }
+.bench b { display: block; font: 800 17px/1 var(--f-display); letter-spacing: .06em; text-transform: uppercase; }
+.bench small { display: block; font-size: 12px; color: #5b6985; }
+.legend { left: auto; right: 14px; color: #d8ecee; border-radius: 10px; }
+.tools { left: 14px; bottom: 14px; }
+.tools button { border-radius: 10px; color: #d8ecee; }
+
+#panel { border: 0; border-radius: 20px; padding: 22px 24px 16px; background: #fff; box-shadow: 0 2px 6px rgba(29, 43, 85, .16); color: var(--foam); }
+.ph { display: flex; align-items: center; gap: 14px; }
+.num { display: grid; place-items: center; flex: none; width: 52px; height: 52px; border-radius: 50%; background: var(--gold); color: #3a2a00; font: 800 25px var(--f-display); box-shadow: 0 2px 0 #c28a10; }
+.ph .meta { margin-bottom: 2px; justify-content: flex-start; gap: 10px; font-size: 12px; letter-spacing: .12em; }
+#panel h1 { font: 800 31px/1.05 var(--f-display); letter-spacing: .02em; text-transform: uppercase; color: var(--navy); }
+.tag { border-radius: 99px; padding: 1px 9px; }
+#panel code { background: #fdf3d8; color: #7a4d00; }
+.call { border: 0; border-left: 4px solid var(--gold); border-radius: 10px; background: #fdf6e3; }
+.call b { color: #8a5a00; }
+.call pre { color: var(--err); }
+table.map td { border-bottom-color: #e5ebf4; }
+table.map td:last-child { color: #8a5a00; font-weight: 500; }
+.nav { gap: 10px; }
+.nav button { padding: 12px 16px; border: 0; border-radius: 12px; background: #eef2f8; color: var(--mute); font-weight: 500; cursor: pointer; }
+.nav button:hover:not(:disabled) { background: #e1e8f3; border: 0; }
+.nav button#b-next { flex: 2; background: var(--gold); color: #2c2000; font-weight: 700; box-shadow: 0 2px 0 #c28a10; }
+.nav button#b-next:hover:not(:disabled) { background: #ffc84a; }
+.nav button:disabled { opacity: .45; }
+.kbd { color: var(--mute); }
+
+#steps { border: 0; border-radius: 20px; padding: 10px 12px; background: #fff; box-shadow: 0 2px 6px rgba(29, 43, 85, .16); overflow: hidden; }
+#steps h2 { display: none; }
+#steps ol { flex-direction: row; gap: 10px; overflow-x: auto; padding: 2px 2px 6px; scroll-snap-type: x proximity; }
+#steps li { flex: 0 0 auto; scroll-snap-align: start; }
+.stp { width: auto; min-width: 172px; max-width: 220px; height: 64px; align-items: center; gap: 10px; padding: 8px 12px; border: 2px solid transparent; border-radius: 14px; background: #f1f5fb; color: var(--foam); text-align: left; }
+.stp span { font: 700 15px/1.1 var(--f-display); letter-spacing: .04em; text-transform: uppercase; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.stp i { display: grid; place-items: center; width: 30px; height: 30px; flex: none; border-radius: 50%; background: #d9e2f0; color: var(--navy); font: 800 14px var(--f-display); }
+.stp:hover { background: #e6edf8; color: var(--foam); }
+.stp[aria-current="step"] { background: #fff8e4; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245, 184, 46, .25); color: var(--foam); }
+.stp[aria-current="step"] i { background: var(--gold); color: #3a2a00; }
+.stp.done i { background: #cfe9d6; color: #1f6b35; }
+
+#gloss { background: rgba(20, 30, 60, .55); }
+.gbox { border-radius: 18px; }
+.ghead h2 { color: var(--navy); }
+.gtabs button { border-radius: 10px; }
+.gtabs button[aria-selected="true"] { color: var(--navy); border-color: var(--gold); background: #fff3cf; }
+.gcode { background: #f1f5fb; }
+.gx { border-radius: 10px; }
+.gent .ex b { color: #8a5a00; }
+@keyframes hit { 0%, 60% { background: rgba(245, 184, 46, .25); } 100% { background: transparent; } }
+.stp:focus-visible, .nav button:focus-visible, .tools button:focus-visible, .gbtn:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+
+@media (max-width: 960px) {
+  body { overflow: auto; }
+  #app { height: auto; min-height: 100%; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 58vh auto auto; grid-template-areas: "head" "stage" "panel" "steps"; padding: 12px 14px 16px; }
+  .brand span { display: none; }
+  .stp { min-width: 150px; }
+  .legend { left: 14px; right: 14px; top: 76px; font-size: 11px; gap: 8px; }
+  #panel { padding: 18px; }
+}
+@media (max-width: 1180px) and (min-width: 961px) { #app { grid-template-columns: minmax(0, 1fr) 360px; } .brand span { display: none; } }
 </style>
 
 </head><body>
 <div id="app">
   <header>
-    <div class="brand"><b>KYNOVA</b><span>del archivo .kyn al Chapín, paso a paso</span></div>
+    <div class="brand"><svg class="logo" viewBox="0 0 44 44" aria-hidden="true"><rect width="44" height="44" rx="12" fill="#1d2b55"/><path d="M22 7l11.5 6.6v13.2L22 33.4 10.5 26.8V13.6z" fill="#f5b82e" stroke="#0f1a3b" stroke-width="2" stroke-linejoin="round"/><path d="M17 15v14M17 22l8-7M17 22l8 7" fill="none" stroke="#1d2b55" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="txt"><b>KYN<em>OVA</em></b><span>del archivo .kyn al Chapín, paso a paso</span></div></div>
     <button class="gbtn" id="b-gloss" type="button" aria-haspopup="dialog">Guía y glosario</button>
     <div class="counters" aria-live="polite">
       <div class="ctr"><small>Tokens</small><strong id="c-tok">—</strong></div>
@@ -198,6 +288,7 @@ table.map td:last-child { color: var(--brass); }
   </header>
   <nav id="steps" aria-label="Pasos"><h2>Recorrido</h2><ol id="steplist"></ol></nav>
   <main id="stage">
+    <div class="bench" aria-hidden="true"><i id="bn">01</i><div><b>Banco de trabajo</b><small id="bs"></small></div></div>
     <canvas id="gl" aria-label="Escena 3D del compilador. Arrastra para girar, rueda para acercar."></canvas>
     <div class="legend" id="legend">
       <span style="--c:var(--adam)">adam · entero</span>
@@ -791,8 +882,8 @@ function renderPanel(i) {
   const sg = { "+": "p", "−": "m", t: "t" }, sym = { "+": "+", "−": "−", t: "~" };
   const used = new Set();
   panel.innerHTML = `
-    <div class="meta"><span class="tag ${s.tag}">${s.tag === "SOLUCION" ? "SOLUCIÓN" : s.tag}</span><span>Paso ${i + 1} de ${TOTAL}</span></div>
-    <h1>${s.title}</h1>
+    <div class="ph"><span class="num">${String(i + 1).padStart(2, "0")}</span><div><div class="meta"><span class="tag ${s.tag}">${s.tag === "SOLUCION" ? "SOLUCIÓN" : s.tag}</span><span>Paso ${i + 1} de ${TOTAL}</span></div>
+    <h1>${s.title}</h1></div></div>
     ${s.body.map((p) => `<p>${linkTerms(p, used)}</p>`).join("")}
     ${s.call ? `<div class="call"><b>${s.call[0]}</b>${s.call[2] ? `<pre>${s.call[1]}</pre>` : linkTerms(s.call[1], used)}</div>` : ""}
     ${s.table ? `<table class="map"><tbody>${s.table.map((r) => `<tr><td>${r[0]}</td><td>→ ${r[1]}</td></tr>`).join("")}</tbody></table>` : ""}
@@ -803,6 +894,7 @@ function renderPanel(i) {
   panel.scrollTop = 0;
   listEl.querySelectorAll(".stp").forEach((b, k) => { b.toggleAttribute("aria-current", k === i); if (k === i) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current"); b.classList.toggle("done", k < i); });
   $("legend").classList.toggle("on", i === 5);
+  $("bn").textContent = String(i + 1).padStart(2, "0"); $("bs").textContent = `Paso ${i + 1} · ${s.title}`;
 }
 
 /* ---- Cámara ---- */

@@ -5,7 +5,7 @@ Coolify la sirve con nginx usando el `Dockerfile` de esta carpeta.
 
 ## Lo que necesitas antes
 - Coolify ya instalado y funcionando en el VPS.
-- Un repositorio de GitHub donde esté esta carpeta (ver «Opción A» o «Opción B»).
+- El repositorio de GitHub `jaestrada40/kynova-3d-V2` (ver el paso 2).
 - Un dominio o subdominio, por ejemplo `kynova.tudominio.com`.
 
 ## 1. Apuntar el dominio al VPS
@@ -18,27 +18,15 @@ En el panel de DNS (Hostinger):
 Espera unos minutos a que propague. Se puede comprobar con `nslookup kynova.tudominio.com`.
 
 ## 2. Tener el código en GitHub
-**Opción A: usar el repositorio del proyecto.** Esta carpeta es `presentacion/`. Hay que hacer push del
-repositorio (hoy el push está bloqueado por permisos de la cuenta).
-
-**Opción B (la más rápida): un repositorio nuevo solo para la página.**
-```sh
-mkdir kynova-3d && cd kynova-3d
-cp /ruta/al/proyecto/presentacion/{index.html,Dockerfile,nginx.conf} .
-git init && git add . && git commit -m "Página 3D de Kynova"
-git branch -M main
-git remote add origin https://github.com/TU_USUARIO/kynova-3d.git
-git push -u origin main
-```
+Esta página vive en el repositorio `https://github.com/jaestrada40/kynova-3d-V2`, con `index.html`, `Dockerfile`
+y `nginx.conf` en la raíz. Para actualizarla: cambiar los archivos, hacer commit y `git push origin main`.
 
 ## 3. Crear el recurso en Coolify
 1. **Projects → (tu proyecto) → New Resource.**
 2. Elegir **Public Repository** (o **Private Repository (with GitHub App)** si el repo es privado).
 3. Pegar la URL del repositorio y elegir la rama `main`.
 4. En **Build Pack** elegir **Dockerfile**.
-5. **Base Directory:**
-   - Opción A: `/presentacion`
-   - Opción B: `/`
+5. **Base Directory:** `/`
 6. **Ports Exposes:** `80`.
 7. En **Domains** escribir `https://kynova.tudominio.com`. Coolify pide el certificado HTTPS solo (Let's Encrypt).
 8. (Opcional) En **Health Check** activar la ruta `/healthz`.

@@ -341,10 +341,10 @@ Solo se genera si el programa es válido.
 |------------------|---------------|
 | `splice adam`    | `va pisto`    |
 | `splice eve`     | `va quetzal`  |
-| `splice plasmid` | `va cuento`   |
+| `splice plasmid` | `va` (sin tipo) |
 | `atlas`          | `cabal`       |
 | `ryan`           | `sino`        |
-| `ryan atlas`     | `sino { cabal … }` (Chapín no tiene else-if) |
+| `ryan atlas`     | `sino (cond) { … }` |
 | `vita`           | `brega`       |
 | `radio`          | `aguas`      |
 | `diary`          | `shute`       |

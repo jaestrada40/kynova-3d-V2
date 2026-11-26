@@ -5,7 +5,7 @@
 #include <string.h>
 
 /* Traductor Kynova -> Chapín (grupo 4): recorre el AST y escribe Chapin.gt.
-   va pisto/quetzal/cuento = splice adam/eve/plasmid | cabal/sino = atlas/ryan | brega = vita
+   va pisto/quetzal = splice adam/eve (plasmid: va sin tipo) | cabal/sino = atlas/ryan | brega = vita
    aguas = radio (leer una variable) | shute = diary (salida) */
 
 /* Comentarios del fuente, en orden. El AST no los guarda: el léxico los registra aquí
@@ -76,20 +76,30 @@ static void stmt(FILE *o, const AstNode *s, int lvl)
     indent(o, lvl);
     switch (s->kind) {
     case NODE_DECL:
-        fprintf(o, "va %s%s", s->type == TYPE_ADAM ? "pisto " : s->type == TYPE_EVE ? "quetzal " : "cuento ", s->text);
+        fprintf(o, "va %s%s", s->type == TYPE_ADAM ? "pisto " : s->type == TYPE_EVE ? "quetzal " : "", s->text);
         if (s->child[0]) { fputs(" = ", o); expr(o, s->child[0]); }
         fputs(";\n", o);
         break;
     case NODE_ASSIGN: fprintf(o, "%s = ", s->text); expr(o, s->child[0]); fputs(";\n", o); break;
     case NODE_READ:   fprintf(o, "aguas(%s);\n", s->text); break;
     case NODE_WRITE:  fputs("shute(", o); expr(o, s->child[0]); fputs(");\n", o); break;
-    case NODE_IF:
-        fputs("cabal (", o); expr(o, s->child[0]); fputs(") ", o);
-        block(o, s->child[1], lvl);
+    case NODE_IF: {
+        /* shortcut: un ryan cuyo bloque es solo otro atlas sale como "sino (cond)", sin distinguir
+           "ryan atlas" de "ryan { atlas }"; ambos son equivalentes. */
+        const AstNode *i = s, *e;
+        fputs("cabal (", o); expr(o, i->child[0]); fputs(") ", o);
+        block(o, i->child[1], lvl);
+        while ((e = i->child[2])->count == 1 && e->items[0]->kind == NODE_IF &&
+               !(next_comment < ncomments && comments[next_comment].line < e->items[0]->line)) {
+            i = e->items[0];
+            fputs(" sino (", o); expr(o, i->child[0]); fputs(") ", o);
+            block(o, i->child[1], lvl);
+        }
         fputs(" sino ", o);
-        block(o, s->child[2], lvl);
+        block(o, e, lvl);
         fputc('\n', o);
         break;
+    }
     case NODE_WHILE:
         fputs("brega (", o); expr(o, s->child[0]); fputs(") ", o);
         block(o, s->child[1], lvl);

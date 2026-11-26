@@ -1,6 +1,6 @@
 // Codigo Andante generado por andante (Grupo 6) desde andante.and
 // Traduccion automatica de Andante a Kynova (.kyn)
-va cuento Personaje = "";
+va Personaje = "";
 va pisto estrellas = 0;
 va quetzal tiempo = 0.00;
 // Archivo de prueba completo con operadores binarios y paréntesis (valido3.sa)
@@ -10,12 +10,10 @@ tiempo = 45.50;
 aguas(estrellas);
 cabal (estrellas >= 20) {
     tiempo = (tiempo - 5.50) * 2;
+} sino (estrellas > 10) {
+    estrellas = (estrellas + 10) / 2;
 } sino {
-    cabal (estrellas > 10) {
-        estrellas = (estrellas + 10) / 2;
-    } sino {
-        estrellas = 100 - (25 * 2);
-    }
+    estrellas = 100 - (25 * 2);
 }
 shute(Personaje);
 shute(tiempo);

@@ -92,7 +92,7 @@ header .gbtn { margin-left: 4px; }
 #panel { grid-area: panel; overflow-y: auto; padding: 22px 24px 18px; border-left: 1px solid var(--line); background: var(--deep); display: flex; flex-direction: column; gap: 14px; }
 .meta { display: flex; justify-content: space-between; align-items: center; font: 600 11px var(--f-display); letter-spacing: .18em; text-transform: uppercase; color: var(--mute); }
 .tag { padding: 3px 9px; border-radius: 4px; border: 1px solid currentColor; }
-.tag.PROBLEMA, .tag.CASO { color: var(--err); }
+.tag.PROBLEMA { color: var(--err); }
 .tag.IDEA { color: var(--adam); }
 .tag.SOLUCION { color: var(--plasmid); }
 .tag.RESUMEN { color: var(--brass); }
@@ -279,7 +279,7 @@ table.map td:last-child { color: #8a5a00; font-weight: 500; }
 <div id="app">
   <header>
     <div class="brand"><svg class="logo" viewBox="0 0 44 44" aria-hidden="true"><rect width="44" height="44" rx="12" fill="#1d2b55"/><path d="M22 7l11.5 6.6v13.2L22 33.4 10.5 26.8V13.6z" fill="#f5b82e" stroke="#0f1a3b" stroke-width="2" stroke-linejoin="round"/><path d="M17 15v14M17 22l8-7M17 22l8 7" fill="none" stroke="#1d2b55" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="txt"><b>KYN<em>OVA</em></b><span>del archivo .kyn al Chapín, paso a paso</span></div></div>
-    <button class="gbtn" id="b-gloss" type="button" aria-haspopup="dialog">Guía y glosario</button>
+    <button class="gbtn" id="b-gloss" type="button" aria-haspopup="dialog">Manual y glosario</button>
     <div class="counters" aria-live="polite">
       <div class="ctr"><small>Tokens</small><strong id="c-tok">—</strong></div>
       <div class="ctr"><small>Nodos del árbol</small><strong id="c-nod">—</strong></div>
@@ -307,17 +307,43 @@ table.map td:last-child { color: #8a5a00; font-weight: 500; }
   <aside id="panel" aria-live="polite"></aside>
 </div>
 
-<div id="gloss" role="dialog" aria-modal="true" aria-label="Guía y glosario">
+<div id="gloss" role="dialog" aria-modal="true" aria-label="Manual y glosario">
   <div class="gbox">
     <div class="ghead">
-      <div class="gtabs" role="tablist"><button role="tab" id="t-guide" type="button" aria-selected="true">Guía</button><button role="tab" id="t-gloss" type="button" aria-selected="false">Glosario</button></div>
+      <div class="gtabs" role="tablist"><button role="tab" id="t-guide" type="button" aria-selected="true">Manual</button><button role="tab" id="t-gloss" type="button" aria-selected="false">Glosario</button></div>
       <input id="gq" type="search" placeholder="Buscar: flex, token, árbol…" aria-label="Buscar en el glosario" autocomplete="off" hidden>
       <button class="gx" id="gclose" type="button">Cerrar</button>
     </div>
     <div class="glist" id="gguide">
-      <p class="gintro">Todo lo necesario para correr el proyecto y entender cada archivo.</p>
+      <p class="gintro">Manual de uso: cómo instalar, compilar y correr el proyecto, qué archivo se ejecuta y qué produce.</p>
       <h3 class="grp">Qué hace</h3>
       <p>Kynova es un compilador. Lee un archivo <code>.kyn</code>, comprueba que esté bien escrito y que los tipos tengan sentido, y escribe su traducción a Chapín en un archivo <code>.gt</code>. No ejecuta el programa.</p>
+      <h3 class="grp">Manual paso a paso</h3>
+      <table class="gtab"><thead><tr><th>Qué</th><th>Cuál</th></tr></thead><tbody>
+        <tr><td>El programa que se ejecuta</td><td><code>./kynova</code> (aparece al correr <code>make</code>)</td></tr>
+        <tr><td>El archivo que se le da</td><td><code>salida.kyn</code> (o cualquier <code>.kyn</code>)</td></tr>
+        <tr><td>El archivo que produce</td><td><code>Chapin.gt</code></td></tr>
+        <tr><td>Dónde se corre</td><td>En una terminal, dentro de la carpeta del proyecto (donde está el <code>Makefile</code>)</td></tr>
+      </tbody></table>
+      <p><b>1. Instalar las herramientas</b> (solo la primera vez). Comandos en la sección siguiente.</p>
+      <p><b>2. Abrir la terminal en la carpeta del proyecto.</b></p>
+      <pre class="gcode">cd ruta/a/kynova
+ls                  # debe verse Makefile, src, tests y salida.kyn</pre>
+      <p><b>3. Compilar.</b> Crea el programa <code>./kynova</code>. Si no sale ningún error, está listo.</p>
+      <pre class="gcode">make</pre>
+      <p><b>4. Comprobar que el archivo es válido.</b> Debe terminar diciendo <code>Resultado: programa VÁLIDO</code>.</p>
+      <pre class="gcode">./kynova -q salida.kyn</pre>
+      <p><b>5. Generar el Chapín.</b> Escribe <code>Chapin.gt</code> y avisa con «Chapín generado en Chapin.gt».</p>
+      <pre class="gcode">./kynova -c Chapin.gt salida.kyn</pre>
+      <p><b>6. Entregar <code>Chapin.gt</code></b> al grupo de Chapín. Para traducir otro programa, cambia <code>salida.kyn</code> por tu archivo.</p>
+      <p><b>7. (Opcional) Correr las pruebas.</b> Debe terminar con «Pruebas: 23 OK, 0 fallidas».</p>
+      <pre class="gcode">make test</pre>
+      <h3 class="grp">Qué se ve al correrlo</h3>
+      <p>Archivo válido: el compilador termina con <code>Resultado: programa VÁLIDO</code> y el código de salida 0. Con <code>-c</code> escribe el Chapín.</p>
+      <p>Archivo con un error: dice el archivo, la línea, la columna y el tipo de error, y no genera el Chapín. Ejemplo:</p>
+      <pre class="gcode">./kynova tests/invalid/04_falta_ryan.kyn
+tests/invalid/04_falta_ryan.kyn:4:1: error sintáctico: fin de archivo inesperado, se esperaba 'ryan'
+Resultado: programa INVÁLIDO (0 error(es) léxico(s), 1 sintáctico(s))</pre>
       <h3 class="grp">Qué hay que tener instalado</h3>
       <p>Un compilador de C (<code>gcc</code> o <code>clang</code>), <b>Flex</b> 2.6 o más nuevo, <b>Bison</b> 3.6 o más nuevo y <code>make</code>.</p>
       <pre class="gcode"># macOS (el bison que trae el sistema es muy viejo)
@@ -327,8 +353,7 @@ brew install bison flex
 sudo apt install build-essential flex bison
 
 # Windows: usar WSL (Ubuntu) y seguir los pasos de Linux</pre>
-      <h3 class="grp">Cómo se corre</h3>
-      <p>Desde la carpeta del proyecto:</p>
+      <h3 class="grp">Todos los comandos</h3>
       <pre class="gcode">make                                # compila y crea el programa ./kynova
 ./kynova salida.kyn                 # revisa el archivo: muestra árbol y símbolos
 ./kynova -q salida.kyn              # solo el veredicto (VÁLIDO o INVÁLIDO)
@@ -366,7 +391,6 @@ make test                           # corre los 23 casos de prueba</pre>
         <tr><td><code>ast.png</code></td><td>Imagen del árbol (se hace con <code>make ast-png</code>, requiere Graphviz).</td></tr>
         <tr><td><code>Lenguajes Compiladores.xlsx</code></td><td>La tabla que compara el vocabulario de todos los grupos.</td></tr>
         <tr><td><code>README.md</code></td><td>La documentación completa del proyecto.</td></tr>
-        <tr><td><code>PROMPT_PRESENTACION.md</code></td><td>El texto para generar el PowerPoint de la entrega.</td></tr>
         <tr><td><code>presentacion/index.html</code></td><td>Esta página. Se abre con doble clic en el navegador y necesita internet.</td></tr>
         <tr><td><code>presentacion/Dockerfile</code>, <code>nginx.conf</code></td><td>Lo que usa Coolify para publicar la página en un servidor. Los pasos están en <code>DEPLOY.md</code>.</td></tr>
       </tbody></table>
@@ -374,6 +398,9 @@ make test                           # corre los 23 casos de prueba</pre>
       <div class="gfaq"><b>¿Qué significa «error léxico», «sintáctico» o «semántico»?</b><p>Dice qué fase lo atrapó: una pieza que no existe, piezas en mal orden, o algo bien escrito pero sin sentido, como mezclar tipos. Mira el Glosario.</p></div>
       <div class="gfaq"><b>¿Dónde cambio una palabra de Kynova?</b><p>En <code>src/kynova.l</code> (la palabra) y <code>src/kynova.y</code> (si cambia la gramática).</p></div>
       <div class="gfaq"><b>¿Dónde cambio cómo sale algo en Chapín?</b><p>En <code>src/chapin.c</code>. Después corre <code>make</code> y <code>./kynova -c Chapin.gt salida.kyn</code>.</p></div>
+      <div class="gfaq"><b>make dice «bison: command not found» o «flex: command not found».</b><p>Falta instalarlos. En macOS: <code>brew install bison flex</code>. En Ubuntu: <code>sudo apt install build-essential flex bison</code>.</p></div>
+      <div class="gfaq"><b>make falla en macOS por la versión de Bison.</b><p>El Bison del sistema es muy viejo (2.3). Instala el de Homebrew con <code>brew install bison</code>; el <code>Makefile</code> lo encuentra solo.</p></div>
+      <div class="gfaq"><b>«./kynova: No such file or directory».</b><p>Todavía no se compiló o estás en otra carpeta. Corre <code>make</code> dentro de la carpeta del proyecto.</p></div>
       <div class="gfaq"><b>¿Por qué no se genera el Chapín?</b><p>Solo se genera si el archivo es válido. Corre sin <code>-q</code> para ver el error y su línea.</p></div>
     </div>
     <div class="glist" id="glist" hidden></div>
@@ -561,7 +588,7 @@ class CodePanel {
 
 /* ============ CAPAS ============ */
 const L = {};
-for (const k of ["code", "ast", "sym", "gt", "err", "fix", "pipe"]) L[k] = new Layer();
+for (const k of ["code", "ast", "sym", "gt", "err", "pipe"]) L[k] = new Layer();
 
 /* ---- Código + tokens ---- */
 const srcPanel = new CodePanel(SRC_LINES, KW_SRC);
@@ -689,31 +716,6 @@ const errNodes = {};
   Object.values(errNodes).forEach((it) => (it.rev = 0));
 }
 
-/* ---- Correcciones ---- */
-const FIXES = [
-  { t: "Entrada de datos", bad: "aguas(estrellas);", good: "clavar(estrellas);", note: "aguas solo imprime texto. Leer es clavar(x)." },
-  { t: "Paréntesis", bad: "100 - 25 * 2", good: "100 - (25 * 2)", note: "Se conservan los paréntesis del fuente." },
-  { t: "Tipo de texto", bad: 'va Personaje = "";', good: 'va cuento Personaje = "";', note: "En Chapín el texto lleva su propio tipo." },
-  { t: "Comentarios", bad: "(se perdían)", good: "// Codigo Andante generado…", note: "// y /* */ pasan al archivo traducido." },
-];
-const fixCards = FIXES.map((f, i) => {
-  const W = 10.4, H = 5.2;
-  const tex = cardTexture((g, w, h) => {
-    g.strokeStyle = COL.line; g.lineWidth = 4; g.beginPath(); g.roundRect(2, 2, w - 4, h - 4, 22); g.stroke();
-    g.fillStyle = COL.mute; g.font = `600 28px ${MONO}`; g.fillText(f.t.toUpperCase(), 44, 62);
-    g.fillStyle = COL.err; g.font = `600 26px ${MONO}`; g.fillText("ANTES", 44, 146);
-    g.font = `500 44px ${MONO}`; g.fillText(f.bad, 190, 146);
-    g.fillStyle = COL.ok; g.font = `600 26px ${MONO}`; g.fillText("AHORA", 44, 232);
-    g.font = `500 44px ${MONO}`; g.fillText(f.good, 190, 232);
-    g.fillStyle = COL.mute; g.font = `400 28px ${MONO}`; g.fillText(f.note, 44, 322);
-    g.strokeStyle = COL.err; g.lineWidth = 4; g.font = `500 44px ${MONO}`; const w2 = g.measureText(f.bad).width;
-    g.beginPath(); g.moveTo(186, 133); g.lineTo(194 + w2, 133); g.stroke();
-  }, W, H);
-  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(W, H), mat); m.position.set((i % 2 ? 1 : -1) * 5.6, (i < 2 ? 1 : -1) * 3.1, 0);
-  const it = L.fix.reg(m, mat); it.rev = 0; return it;
-});
-
 /* ---- Tubería (resumen) ---- */
 const PIPE = [
   ["Código", "salida.kyn", SRC_LINES.length + " líneas"], ["Flex", "léxico", TOKENS.length + " tokens"], ["Bison", "sintaxis", NODE_N + " nodos"],
@@ -756,12 +758,12 @@ const STEPS = [
   { tag: "IDEA", title: "Los paréntesis cambian la forma del árbol", dur: 3,
     body: ["En <code>tiempo = (tiempo - 5.50) * 2</code> los paréntesis obligan a restar primero. Por eso la resta queda dentro, como hija de la multiplicación.",
       "Regla para leer el árbol: lo que está más abajo se calcula antes."],
-    call: ["CONVIENE SABER", "El árbol ahora guarda una marca de que esa expresión venía entre paréntesis. Así el traductor los escribe igual que el fuente."],
-    chg: [["+", "marca «venía entre paréntesis» en cada nodo"], ["t", "el traductor ya no adivina por precedencia"]] },
+    call: ["CONVIENE SABER", "Cada nodo guarda una marca de que esa expresión venía entre paréntesis. Así el traductor los escribe igual que el fuente."],
+    chg: [["+", "marca «venía entre paréntesis» en cada nodo"], ["t", "el traductor los escribe tal como vienen"]] },
   { tag: "IDEA", title: "ryan atlas es un else-if", dur: 3,
     body: ["<code>atlas (estrellas >= 20)</code> tiene dos ramas. La rama <code>ryan</code> contiene otro condicional con su propia condición.",
       "En el árbol es un condicional dentro del otro. Kynova lo escribe corto con <code>ryan atlas</code>."],
-    call: ["CUIDADO", "Chapín no tiene else-if. Se queda como <code>sino { cabal … }</code>, como indica la columna Chapin del Excel."],
+    call: ["CUIDADO", "Chapín no tiene else-if. Se queda como <code>sino { cabal … }</code>."],
     chg: [["t", "ryan atlas → sino { cabal … }"]] },
   { tag: "IDEA", title: "Los tipos se calculan sobre el árbol", dur: 7,
     body: ["Cada color es un tipo: <code>adam</code> entero, <code>eve</code> decimal, <code>plasmid</code> texto.",
@@ -783,16 +785,11 @@ const STEPS = [
       "<code>ryan atlas</code> sale como <code>sino</code> con un <code>cabal</code> adentro."],
     table: [["splice adam", "va pisto"], ["splice eve", "va quetzal"], ["splice plasmid", "va cuento"], ["atlas", "cabal"], ["ryan", "sino"], ["vita", "brega"], ["radio", "clavar"], ["diary", "shute"]],
     chg: [["+", `Chapin.gt de ${GT_LINES.length} líneas`], ["t", "comentarios y paréntesis conservados"]] },
-  { tag: "CASO", title: "Lo que el otro equipo nos devolvió", dur: 4.5,
-    body: ["Al probar el primer Chapín, el grupo de Chapín encontró cuatro diferencias con lo que su compilador espera. Las cuatro quedaron corregidas.",
-      "Una de ellas, la entrada, salió de seguir el Excel al pie de la letra y resultó incorrecta."],
-    call: ["CONVIENE SABER", "El Excel decía <code>aguas</code> para leer, pero el compilador de Chapín usa <code>clavar(x)</code>. Y <code>cuento</code> no aparece en el Excel. Manda el compilador, no la tabla."],
-    chg: [["t", "aguas → clavar (leer una variable)"], ["t", "100 - 25 * 2 → 100 - (25 * 2)"], ["t", "va → va cuento para texto"], ["+", "comentarios en el Chapín"]] },
   { tag: "RESUMEN", title: "El camino completo", dur: 3.2,
     body: ["Un archivo <code>.kyn</code> entra y un archivo <code>.gt</code> sale. En medio hay cuatro pasos, y cada uno revisa algo distinto.",
       "Flex corta el texto. Bison arma el árbol. La semántica revisa tipos y nombres. El traductor escribe Chapín."],
-    call: ["A CONTINUACIÓN", "Probar más archivos del otro grupo y confirmar con ellos cómo debe verse un else-if en Chapín."],
-    chg: [["+", "salida.kyn válido, sin errores"], ["+", "Chapin.gt listo para el otro grupo"]] },
+    call: ["A CONTINUACIÓN", "Compilar otro archivo con <code>./kynova archivo.kyn</code>."],
+    chg: [["+", "salida.kyn válido, sin errores"], ["+", "Chapin.gt generado"]] },
 ];
 const TOTAL = STEPS.length;
 
@@ -952,8 +949,7 @@ function setStep(i) {
   if (i === 6) on("err");
   if (i === 7) { on("ast", 0.9); on("sym"); }
   if (i === 8) on("gt");
-  if (i === 9) on("fix");
-  if (i === 10) on("pipe");
+  if (i === 9) on("pipe");
   // atenuar nodos fuera del foco
   const focus = i === 3 ? (n) => n.paren : i === 4 ? (n) => n.chain : i === 7 ? (n) => !!n.sym : null;
   ND.forEach((n) => { const d = focus ? (focus(n) ? 1 : (i === 7 ? 0.14 : 0.12)) : 1; nodeItems(n).forEach((it) => (it.dimT = d)); });
@@ -963,8 +959,7 @@ function setStep(i) {
   if (i === 1) tokItems.forEach((it) => (it.rev = 0));
   if (i === 7) { symCards.concat(symLinks).forEach((it) => (it.rev = 0)); }
   if (i === 6) Object.values(errNodes).forEach((it) => (it.rev = 0));
-  if (i === 9) fixCards.forEach((it) => (it.rev = 0));
-  if (i === 10) pipeItems.forEach((it) => (it.rev = 0));
+  if (i === 9) pipeItems.forEach((it) => (it.rev = 0));
   if (i === 0) { srcPanel.draw(0); }
   renderPanel(i);
   flyTo(POSES[i](), false);
@@ -1024,8 +1019,7 @@ function frame(now) {
   if (i === 6) { const keys = ["root", "rootL", "eL", "a", "aL", "eR", "b", "bL", "x"]; keys.forEach((kk, j) => (errNodes[kk].rev = clamp01((p * keys.length * 1.1 - j) / 1.2))); const s = 1 + 0.18 * Math.sin(clock.getElapsed() * 5); errNodes.b.obj.scale.setScalar(0.42 * s * (0.25 + 0.75 * ease(errNodes.b.rev))); }
   if (i === 7) { symCards.forEach((c, j) => (c.rev = clamp01((p * 3.6 - j) / 1))); symLinks.forEach((l, j) => (l.rev = clamp01((p * 1.6 - 0.9 - j * 0.02)))); }
   if (i === 8) { srcPanel2.draw(SRC_LINES.length); gtPanel.draw(Math.ceil(clamp01((p - 0.5) / 0.4) * GT_LINES.length)); }
-  if (i === 9) fixCards.forEach((c, j) => (c.rev = clamp01((p * 5 - j) / 1)));
-  if (i === 10) { pipeItems.forEach((it, j) => (it.rev = clamp01((p * pipeItems.length * 1.2 - j) / 2))); const t = clock.getElapsed() * 0.22; pulses.forEach((it) => { const u = ((t + it.off) % 1); it.obj.position.set(-14.8 + u * 29.6, 0, 0.4); it.rev = clamp01(p * 2 - 0.6); }); }
+  if (i === 9) { pipeItems.forEach((it, j) => (it.rev = clamp01((p * pipeItems.length * 1.2 - j) / 2))); const t = clock.getElapsed() * 0.22; pulses.forEach((it) => { const u = ((t + it.off) % 1); it.obj.position.set(-14.8 + u * 29.6, 0, 0.4); it.rev = clamp01(p * 2 - 0.6); }); }
   counters(Math.max(i, 0), p);
   if (tween && controls) { tween.t = Math.min(1, tween.t + dt / 1.25); const e = ease(tween.t); camera.position.lerpVectors(tween.p0, tween.p1, e); controls.target.lerpVectors(tween.t0, tween.t1, e); if (tween.t >= 1) tween = null; }
   if (controls) controls.update();

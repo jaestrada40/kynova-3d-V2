@@ -7,7 +7,7 @@ va quetzal tiempo = 0.00;
 Personaje = "Peach";
 estrellas = 20;
 tiempo = 45.50;
-clavar(estrellas);
+aguas(estrellas);
 cabal (estrellas >= 20) {
     tiempo = (tiempo - 5.50) * 2;
 } sino {

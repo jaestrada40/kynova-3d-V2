@@ -6,7 +6,7 @@
 
 /* Traductor Kynova -> Chapín (grupo 4): recorre el AST y escribe Chapin.gt.
    va pisto/quetzal/cuento = splice adam/eve/plasmid | cabal/sino = atlas/ryan | brega = vita
-   clavar = radio (leer una variable) | shute = diary (salida) */
+   aguas = radio (leer una variable) | shute = diary (salida) */
 
 /* Comentarios del fuente, en orden. El AST no los guarda: el léxico los registra aquí
    y se reponen antes de la primera instrucción que empieza en una línea posterior.
@@ -81,7 +81,7 @@ static void stmt(FILE *o, const AstNode *s, int lvl)
         fputs(";\n", o);
         break;
     case NODE_ASSIGN: fprintf(o, "%s = ", s->text); expr(o, s->child[0]); fputs(";\n", o); break;
-    case NODE_READ:   fprintf(o, "clavar(%s);\n", s->text); break;
+    case NODE_READ:   fprintf(o, "aguas(%s);\n", s->text); break;
     case NODE_WRITE:  fputs("shute(", o); expr(o, s->child[0]); fputs(");\n", o); break;
     case NODE_IF:
         fputs("cabal (", o); expr(o, s->child[0]); fputs(") ", o);

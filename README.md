@@ -346,7 +346,7 @@ Solo se genera si el programa es válido.
 | `ryan`           | `sino`        |
 | `ryan atlas`     | `sino { cabal … }` (Chapín no tiene else-if) |
 | `vita`           | `brega`       |
-| `radio`          | `clavar`      |
+| `radio`          | `aguas`      |
 | `diary`          | `shute`       |
 
 ## Siguientes fases (no incluidas)

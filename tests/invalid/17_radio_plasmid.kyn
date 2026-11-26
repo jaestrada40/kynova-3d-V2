@@ -1,0 +1,3 @@
+// ESPERADO: no se puede leer con radio
+splice plasmid t = "a";
+radio(t);

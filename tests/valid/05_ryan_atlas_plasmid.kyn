@@ -1,0 +1,13 @@
+// else-if sin anidar y tipo texto
+splice adam n = 5;
+splice plasmid nombre = "Jack";
+nombre = "Andrew";
+atlas (n > 10) {
+    diary(1);
+} ryan atlas (n > 3) {
+    diary(nombre);
+} ryan atlas (n > 0) {
+    diary(2);
+} ryan {
+    diary(0);
+}

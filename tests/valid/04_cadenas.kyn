@@ -1,0 +1,5 @@
+// Cadenas de texto
+splice plasmid nombre = "Peach";
+nombre = "Mario";
+diary(nombre);
+diary("Hola // no es comentario");

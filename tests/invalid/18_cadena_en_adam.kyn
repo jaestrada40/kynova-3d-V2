@@ -1,0 +1,3 @@
+// ESPERADO: no se puede asignar una cadena
+splice adam n = "x";
+diary(n);

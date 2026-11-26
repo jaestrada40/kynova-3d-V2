@@ -1,0 +1,5 @@
+// ESPERADO: no se puede operar con una cadena
+splice plasmid t = "a";
+splice adam n = 1;
+n = n + t;
+diary(n);

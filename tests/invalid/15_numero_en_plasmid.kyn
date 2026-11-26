@@ -1,0 +1,3 @@
+// ESPERADO: no se puede asignar un número
+splice plasmid t = 5;
+diary(t);

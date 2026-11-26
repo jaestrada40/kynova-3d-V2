@@ -1,0 +1,3 @@
+// ESPERADO: no se puede asignar una cadena
+splice eve e = "x";
+diary(e);

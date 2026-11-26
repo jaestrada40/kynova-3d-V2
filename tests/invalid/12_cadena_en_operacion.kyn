@@ -1,0 +1,3 @@
+// ESPERADO: no se puede operar con una cadena
+splice adam s = "hola" + 1;
+diary(s);
